@@ -78,10 +78,9 @@ run_agy() {
       --effort "$effort" \
       --mode accept-edits \
       --sandbox \
-      --print \
       --print-timeout 30m0s \
       --output-format json \
-      "$prompt"
+      --print="$prompt"
   ) | tee "$log"
 }
 
