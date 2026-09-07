@@ -89,7 +89,10 @@
           <span class="league-stamp">KANSAS · BUGGY CLASS · LOT 12</span>
           <img src="art/gui/lockup.png" alt="Bust a Grape" />
           <p>Two illegal harvest rigs. Six bottles. One chalk-dirt ditch.</p>
-          <button id="startButton" class="hero-button" type="button">ENTER THE DITCH</button>
+          <div class="button-row" style="display:flex; gap:16px; margin:24px 0 16px;">
+            <button id="startButton" class="hero-button" type="button">SINGLE MATCH</button>
+            <button id="startSeriesButton" class="hero-button" type="button">BEST-OF-3 SERIES</button>
+          </div>
           <span class="start-note">PICK A LOT · DRAG · RELEASE · LIVE WITH IT</span>
         </div>
       </section>
@@ -99,7 +102,10 @@
         <h2 id="resultWord">VINEGAR.</h2>
         <p id="resultCopy">The house folded. Fold the chairs.</p>
         <div id="resultStats" class="result-stats"></div>
-        <button id="rematchButton" class="hero-button" type="button">RUN IT BACK</button>
+        <div class="button-row" style="display:flex; gap:16px; margin:24px 0 16px;">
+          <button id="rematchButton" class="hero-button" type="button">RUN IT BACK</button>
+          <button id="rematchSeriesButton" class="hero-button" type="button">START NEW SERIES</button>
+        </div>
       </section>
     </main>
 
@@ -121,6 +127,15 @@
       <span>KEEP HANDS CLEAR, PIPS.</span>
     </footer>
   </div>
+
+  <aside id="grudgeCard" class="screen grudge-card" hidden>
+    <div class="grudge-content">
+      <h2>SERIES SCORE</h2>
+      <h1 id="grudgeScore">0 - 0</h1>
+      <div id="grudgeLeader" class="grudge-leader"></div>
+      <button id="grudgeNext" type="button" class="action-button">NEXT MATCH</button>
+    </div>
+  </aside>
 
   <aside id="rotationGate" class="rotation-gate" aria-label="Landscape orientation recommended">
     <div class="rotate-phone" aria-hidden="true"></div>

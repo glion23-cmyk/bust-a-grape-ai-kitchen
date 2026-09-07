@@ -919,3 +919,36 @@ canvas {
   border: 1px solid #1a100c;
   box-shadow: 0 0 2px rgba(0,0,0,0.5);
 }
+
+.grudge-card {
+  background: rgba(26, 16, 12, 0.95);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+  color: var(--cream);
+  text-align: center;
+}
+
+.grudge-content h2 {
+  font: 900 clamp(16px, 2vw, 24px)/1 Impact, Haettenschweiler, sans-serif;
+  color: var(--horizon);
+  margin-bottom: 8px;
+}
+
+.grudge-content h1 {
+  font: 900 clamp(48px, 8vw, 96px)/1 Impact, Haettenschweiler, sans-serif;
+  color: var(--juice);
+  margin-bottom: 24px;
+}
+
+.grudge-leader {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 32px;
+  background: url(art/pip.png) center/contain no-repeat;
+  filter: drop-shadow(0 0 20px var(--juice));
+}
+
+.grudge-leader.late {
+  transform: scaleX(-1);
+}
