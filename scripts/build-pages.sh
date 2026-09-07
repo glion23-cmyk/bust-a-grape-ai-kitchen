@@ -12,9 +12,13 @@ cp \
   "$project_root/index.html" \
   "$project_root/style.css" \
   "$project_root/game.js" \
+  "$project_root/renderer3d.js" \
   "$project_root/manifest.webmanifest" \
   "$project_root/sw.js" \
   "$staging_dir/"
+
+mkdir -p "$staging_dir/vendor"
+cp "$project_root/vendor/three.min.js" "$project_root/vendor/LICENSE.three.txt" "$staging_dir/vendor/"
 
 cp "$project_root/content/lots.json" "$project_root/content/lines.json" "$staging_dir/content/"
 cp \

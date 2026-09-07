@@ -1,9 +1,12 @@
-const CACHE_NAME = "bust-a-grape-night-harvest-v3";
+const CACHE_NAME = "bag-v6";
 const CORE_FILES = [
   "./",
   "./index.html",
-  "./style.css?v=4",
-  "./game.js?v=4",
+  "./style.css?v=6",
+  "./game.js?v=5",
+  "./renderer3d.js?v=3",
+  "./vendor/three.min.js",
+  "./vendor/LICENSE.three.txt",
   "./manifest.webmanifest",
   "./content/lots.json",
   "./content/lines.json",
@@ -26,7 +29,7 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
       .then((keys) => Promise.all(keys
-        .filter((key) => key.startsWith("bust-a-grape-") && key !== CACHE_NAME)
+        .filter((key) => (key.startsWith("bust-a-grape-") || key.startsWith("bag-")) && key !== CACHE_NAME)
         .map((key) => caches.delete(key))))
       .then(() => self.clients.claim())
   );

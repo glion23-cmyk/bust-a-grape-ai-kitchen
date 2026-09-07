@@ -33,6 +33,8 @@
     angleValue: document.getElementById("angleValue"),
     powerValue: document.getElementById("powerValue"),
     powerFill: document.getElementById("powerFill"),
+    cutValue: document.getElementById("cutValue"),
+    cutSlider: document.getElementById("cutSlider"),
     protocolBanner: document.getElementById("protocolBanner"),
     protocolLabel: document.getElementById("protocolLabel"),
     protocolText: document.getElementById("protocolText"),
@@ -175,10 +177,10 @@
   const easeInOut = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   const randomBetween = (min, max) => min + Math.random() * (max - min);
   const freshAimMemory = () => ({
-    table: { angle: 50, power: 50 },
-    pea: { angle: 50, power: 30 },
-    cluster: { angle: 50, power: 57 },
-    lug: { angle: 50, power: 78 }
+    table: { angle: 50, power: 50, cut: 0 },
+    pea: { angle: 50, power: 30, cut: 0 },
+    cluster: { angle: 50, power: 57, cut: 0 },
+    lug: { angle: 50, power: 78, cut: 0 }
   });
 
   let fieldSeed = 117;
@@ -268,6 +270,7 @@
   const COLS = 321;
   const CELL = W / (COLS - 1);
   const terrain = new Float32Array(COLS);
+  const baseTerrain = new Float32Array(COLS);
   let terrainMarks = [];
 
   function resetTerrain() {
@@ -279,6 +282,7 @@
       const ditch = 29 * Math.exp(-Math.pow((x - 642) / 214, 2));
       const grit = Math.sin(x * 0.021) * 3 + Math.sin(x * 0.057 + 1.4) * 1.5;
       terrain[i] = clamp(543 + leftRise + rightRise + ditch + grit, 420, 604);
+      baseTerrain[i] = terrain[i];
     }
     terrainMarks = Array.from({ length: 95 }, () => ({
       x: seededRandom() * W,
@@ -289,28 +293,42 @@
     }));
   }
 
-  function groundAt(x) {
+  function groundAt(x, z = 0) {
     const position = clamp(x / CELL, 0, COLS - 1);
     const left = Math.floor(position);
     const right = Math.min(COLS - 1, left + 1);
-    return lerp(terrain[left], terrain[right], position - left);
+    let baseY = lerp(baseTerrain[left], baseTerrain[right], position - left);
+    for (const c of state.craters) {
+      const dx = x - c.x;
+      const dz = z - (c.z || 0);
+      const dist = Math.hypot(dx, dz);
+      if (dist <= c.radius) {
+        const bowl = Math.pow(Math.cos(dist / c.radius * Math.PI * 0.5), 2);
+        baseY += c.depth * bowl;
+      }
+    }
+    return Math.min(H - 22, baseY);
   }
 
-  function craterAt(x, radius, depth) {
+  function craterAt(x, z, radius, depth) {
+    state.craters.push({ x, z, radius, depth });
     const start = Math.max(0, Math.floor((x - radius) / CELL));
     const end = Math.min(COLS - 1, Math.ceil((x + radius) / CELL));
     for (let i = start; i <= end; i += 1) {
-      const distance = Math.abs(i * CELL - x) / radius;
-      if (distance <= 1) {
-        const bowl = Math.pow(Math.cos(distance * Math.PI * 0.5), 2);
+      const vx = i * CELL;
+      const dx = vx - x;
+      const dz = 0 - z;
+      const dist = Math.hypot(dx, dz);
+      if (dist <= radius) {
+        const bowl = Math.pow(Math.cos(dist / radius * Math.PI * 0.5), 2);
         terrain[i] = Math.min(H - 22, terrain[i] + depth * bowl);
       }
     }
   }
 
   const carts = {
-    player: { id: "player", side: "YARD", machine: "SIDEWINDER", x: 222, facing: 1, hp: 3, maxHp: 3 },
-    enemy: { id: "enemy", side: "LATE", machine: "BOOTLEGGER", x: 1058, facing: -1, hp: 3, maxHp: 3 }
+    player: { id: "player", side: "YARD", machine: "SIDEWINDER", x: 222, z: 0, facing: 1, hp: 3, maxHp: 3 },
+    enemy: { id: "enemy", side: "LATE", machine: "BOOTLEGGER", x: 1058, z: 0, facing: -1, hp: 3, maxHp: 3 }
   };
 
   const state = {
@@ -321,7 +339,9 @@
     playerSelected: "table",
     aimAngle: 50,
     aimPower: 50,
+    aimCut: 0,
     aimMemory: freshAimMemory(),
+    craters: [],
     dragging: false,
     pointerId: null,
     ceremony: null,
@@ -405,6 +425,8 @@
     DOM.angleValue.textContent = `${Math.round(state.aimAngle)}°`;
     DOM.powerValue.textContent = `${Math.round(state.aimPower)}%`;
     DOM.powerFill.style.width = `${state.aimPower}%`;
+    DOM.cutValue.textContent = state.aimCut.toFixed(1);
+    DOM.cutSlider.value = state.aimCut;
     DOM.lotChip.textContent = `LOT ${lot.number}`;
     DOM.selectedLotName.textContent = lot.fullName;
     DOM.turnChip.textContent = state.turn === "player" ? "PIPS ON THE LIP" : "LATE AT THE LINE";
@@ -442,10 +464,11 @@
     if (state.mode === "match" && (state.turn !== "player" || state.phase !== "aim")) return;
     const recallAim = state.mode === "match" && state.turn === "player" && state.phase === "aim";
     if (recallAim) {
-      state.aimMemory[state.playerSelected] = { angle: state.aimAngle, power: state.aimPower };
+      state.aimMemory[state.playerSelected] = { angle: state.aimAngle, power: state.aimPower, cut: state.aimCut };
       const remembered = state.aimMemory[id];
       state.aimAngle = remembered.angle;
       state.aimPower = remembered.power;
+      state.aimCut = remembered.cut;
     }
     state.selected = id;
     if (state.mode !== "match" || state.turn === "player") state.playerSelected = id;
@@ -462,6 +485,7 @@
     state.playerSelected = "table";
     state.aimAngle = 50;
     state.aimPower = 50;
+    state.aimCut = 0;
     state.aimMemory = freshAimMemory();
     state.dragging = false;
     state.pointerId = null;
@@ -471,6 +495,8 @@
     state.rings = [];
     state.floaters = [];
     state.stains = [];
+    state.craters = [];
+    state.rutGhost = null;
     state.shake = 0;
     state.resolveTimer = -1;
     state.intermission = 0;
@@ -540,16 +566,17 @@
       : { x: cart.x - 118, y: ground - 111 };
   }
 
-  function velocityFor(cart, lot, angle, power) {
+  function velocityFor(cart, lot, angle, power, cut = 0) {
     const radians = angle * Math.PI / 180;
     const speed = (330 + power * 6.5) * lot.speed;
     return {
       x: Math.cos(radians) * speed * cart.facing,
-      y: -Math.sin(radians) * speed
+      y: -Math.sin(radians) * speed,
+      z: cut * 120
     };
   }
 
-  function beginShot(shooterId, lotId, angle, power) {
+  function beginShot(shooterId, lotId, angle, power, cut = 0) {
     if (state.phase !== "aim" && state.phase !== "intermission") return;
     const lot = LOTS[lotId];
     state.phase = "ceremony";
@@ -560,6 +587,7 @@
       lotId,
       angle: clamp(angle, 18, 82),
       power: clamp(power, 18, 100),
+      cut: clamp(cut, -1, 1),
       elapsed: 0,
       duration: lot.ceremony
     };
@@ -576,7 +604,7 @@
     DOM.protocolText.textContent = lot.protocol;
     DOM.protocolBanner.hidden = false;
     if (shooterId === "player") {
-      state.aimMemory[lotId] = { angle: state.aimAngle, power: state.aimPower };
+      state.aimMemory[lotId] = { angle: state.aimAngle, power: state.aimPower, cut: state.aimCut };
       state.stats.shots += 1;
       state.stats.lotsUsed.add(lotId);
     }
@@ -591,12 +619,14 @@
     const cart = carts[ceremony.shooterId];
     const lot = LOTS[ceremony.lotId];
     const muzzle = muzzleFor(cart);
-    const velocity = velocityFor(cart, lot, ceremony.angle, ceremony.power);
+    const velocity = velocityFor(cart, lot, ceremony.angle, ceremony.power, ceremony.cut);
     state.projectiles = [{
       x: muzzle.x,
       y: muzzle.y,
+      z: 0,
       vx: velocity.x,
       vy: velocity.y,
+      vz: velocity.z,
       radius: lot.radius,
       rotation: 0,
       age: 0,
@@ -627,8 +657,9 @@
     return "lug";
   }
 
-  function projectileHitsCart(x, y, cart) {
-    const centerY = groundAt(cart.x) - (cart.id === "player" ? 70 : 65);
+  function projectileHitsCart(x, y, z = 0, cart) {
+    if (Math.abs(z - (cart.z || 0)) > 40) return false;
+    const centerY = groundAt(cart.x, cart.z) - (cart.id === "player" ? 70 : 65);
     const rx = cart.id === "player" ? 112 : 104;
     const ry = cart.id === "player" ? 61 : 66;
     return Math.pow((x - cart.x) / rx, 2) + Math.pow((y - centerY) / ry, 2) <= 1;
@@ -647,9 +678,9 @@
       x += vx / 70;
       y += vy / 70;
       closest = Math.min(closest, Math.abs(x - target.x) + Math.abs(y - (groundAt(target.x) - 62)) * 0.35);
-      if (projectileHitsCart(x, y, target)) return 0;
+      if (projectileHitsCart(x, y, 0, target)) return 0;
       if (x < -60 || x > W + 60 || y > H + 50) break;
-      if (y + lot.radius >= groundAt(x)) return Math.min(closest, Math.abs(x - target.x));
+      if (y + lot.radius >= groundAt(x, 0)) return Math.min(closest, Math.abs(x - target.x));
     }
     return closest + 250;
   }
@@ -737,7 +768,7 @@
     updateAimFromPoint(canvasPoint(event));
     state.dragging = false;
     state.pointerId = null;
-    beginShot("player", state.selected, state.aimAngle, state.aimPower);
+    beginShot("player", state.selected, state.aimAngle, state.aimPower, state.aimCut);
   }
 
   canvas.addEventListener("pointerup", releasePointer);
@@ -765,7 +796,7 @@
     else if (event.code === "ArrowLeft") state.aimPower = clamp(state.aimPower - 2, 18, 100);
     else if (event.code === "Space" || event.code === "Enter") {
       event.preventDefault();
-      beginShot("player", state.selected, state.aimAngle, state.aimPower);
+      beginShot("player", state.selected, state.aimAngle, state.aimPower, state.aimCut);
       return;
     } else return;
     event.preventDefault();
@@ -789,6 +820,10 @@
 
   buildLotButtons();
   DOM.worldHud.hidden = true;
+  DOM.cutSlider.addEventListener("input", (event) => {
+    state.aimCut = parseFloat(event.target.value);
+    DOM.cutValue.textContent = state.aimCut.toFixed(1);
+  });
   DOM.soundToggle.setAttribute("aria-pressed", "true");
   updateHud();
 
@@ -874,9 +909,12 @@
   function impactProjectile(projectile, directCart = null) {
     const lot = LOTS[projectile.lotId];
     const impactX = clamp(projectile.x, 0, W);
-    const impactY = Math.min(projectile.y, groundAt(impactX));
+    const impactY = Math.min(projectile.y, groundAt(impactX, projectile.z));
     const childScale = projectile.child ? 0.58 : 1;
-    craterAt(impactX, lot.craterRadius * childScale, lot.craterDepth * childScale);
+    if (projectile.owner === "player" && !projectile.child) {
+      state.rutGhost = { trail: [...projectile.trail], impactX, impactY, z: projectile.z, lotId: projectile.lotId };
+    }
+    craterAt(impactX, projectile.z || 0, lot.craterRadius * childScale, lot.craterDepth * childScale);
     addStain(impactX, lot.id, lot.id === "lug" ? 1.75 : projectile.child ? 0.62 : 1);
     addRing(impactX, impactY, lot.splashRadius || lot.craterRadius, lot.id === "pea" ? COLORS.cream : COLORS.juice);
     burstAt(impactX, impactY, Math.round((lot.id === "lug" ? 42 : projectile.child ? 12 : 24) * childScale), "juice", lot.id);
@@ -889,8 +927,8 @@
     if (lot.splash > 0) {
       [carts.player, carts.enemy].forEach((cart) => {
         if (cart === directCart) return;
-        const centerY = groundAt(cart.x) - 62;
-        const distance = Math.hypot(impactX - cart.x, impactY - centerY);
+        const centerY = groundAt(cart.x, cart.z) - 62;
+        const distance = Math.hypot(impactX - cart.x, impactY - centerY, (projectile.z || 0) - (cart.z || 0));
         if (distance <= lot.splashRadius) applyVolleyDamage(cart, lot.splash, false);
       });
     }
@@ -902,8 +940,10 @@
       spawned.push({
         x: projectile.x + randomBetween(-4, 4),
         y: projectile.y + randomBetween(-4, 4),
+        z: (projectile.z || 0) + randomBetween(-10, 10),
         vx: projectile.vx + spread,
         vy: projectile.vy + (index - 2) * 18 - 24,
+        vz: (projectile.vz || 0) + randomBetween(-30, 30),
         radius: 5,
         rotation: randomBetween(-1, 1),
         age: 0.26,
@@ -934,17 +974,24 @@
       projectile.vy += GRAVITY * lot.gravity * dt;
       projectile.x += projectile.vx * dt;
       projectile.y += projectile.vy * dt;
+      projectile.z = (projectile.z || 0) + (projectile.vz || 0) * dt;
       projectile.rotation += (projectile.vx / 210) * dt;
+
+      // Hook for deterministic testing
+      if (typeof window !== "undefined" && window.__FIXED_SAMPLES__) {
+        window.__FIXED_SAMPLES__.push({ x: projectile.x, y: projectile.y, z: projectile.z });
+      }
+
       projectile.trailClock += dt;
       if (projectile.trailClock >= 0.045) {
         projectile.trailClock = 0;
-        projectile.trail.push({ x: projectile.x, y: projectile.y });
+        projectile.trail.push({ x: projectile.x, y: projectile.y, z: projectile.z });
         if (projectile.trail.length > 11) projectile.trail.shift();
       }
 
       const target = projectile.owner === "player" ? carts.enemy : carts.player;
-      const targetCenterY = groundAt(target.x) - 62;
-      state.volley.closest = Math.min(state.volley.closest, Math.hypot(projectile.x - target.x, (projectile.y - targetCenterY) * 0.72));
+      const targetCenterY = groundAt(target.x, target.z) - 62;
+      state.volley.closest = Math.min(state.volley.closest, Math.hypot(projectile.x - target.x, (projectile.y - targetCenterY) * 0.72, projectile.z - target.z));
 
       if (projectile.lotId === "cluster" && !projectile.child && !projectile.split && projectile.age > 0.28 && projectile.vy >= 0) {
         projectile.split = true;
@@ -955,7 +1002,7 @@
       let directCart = null;
       for (const cart of [carts.player, carts.enemy]) {
         if (cart.id === projectile.owner && projectile.age < 0.3) continue;
-        if (projectileHitsCart(projectile.x, projectile.y, cart)) {
+        if (projectileHitsCart(projectile.x, projectile.y, projectile.z, cart)) {
           directCart = cart;
           break;
         }
@@ -966,7 +1013,7 @@
         continue;
       }
 
-      if (projectile.x >= 0 && projectile.x <= W && projectile.y + projectile.radius >= groundAt(projectile.x)) {
+      if (projectile.x >= 0 && projectile.x <= W && projectile.y + projectile.radius >= groundAt(projectile.x, projectile.z)) {
         impactProjectile(projectile);
         continue;
       }
@@ -1022,6 +1069,7 @@
       const remembered = state.aimMemory[state.selected];
       state.aimAngle = remembered.angle;
       state.aimPower = remembered.power;
+      state.aimCut = remembered.cut;
       DOM.fieldHint.hidden = true;
     }
     updateHud();
@@ -1783,7 +1831,7 @@
     ctx.restore();
   }
 
-  function render() {
+  function render2d() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;
     ctx.fillStyle = COLORS.sky;
@@ -1826,7 +1874,11 @@
     } else {
       accumulator = 0;
     }
-    render();
+    if (window.__BAG__.render3D) {
+      window.__BAG__.render3D();
+    } else {
+      render2d();
+    }
     requestAnimationFrame(frame);
   }
 
@@ -1840,9 +1892,18 @@
     },
     fire() {
       if (state.mode === "match" && state.turn === "player" && state.phase === "aim") {
-        beginShot("player", state.selected, state.aimAngle, state.aimPower);
+        beginShot("player", state.selected, state.aimAngle, state.aimPower, state.aimCut);
       }
     },
+    state,
+    carts,
+    terrain,
+    baseTerrain,
+    W, H, CELL,
+    groundAt,
+    LOTS,
+    IMG,
+    COLORS,
     snapshot() {
       return {
         mode: state.mode,
@@ -1858,7 +1919,10 @@
     }
   };
 
-  assetsReady.finally(() => render());
+  assetsReady.finally(() => {
+    if (window.__BAG__.render3D) window.__BAG__.render3D();
+    else render2d();
+  });
   requestAnimationFrame(frame);
 
   if ("serviceWorker" in navigator && window.isSecureContext) {
