@@ -1,0 +1,81 @@
+{
+  "start": [
+    "You couldn’t bust a grape in a food fight.",
+    "Yard and Late are in the ditch. Somebody’s leaving as salad.",
+    "Pips on the lip. Dignity behind the chalk line.",
+    "One grape, one chance, several avoidable decisions."
+  ],
+  "lot": {
+    "table": [
+      "Table fruit. Clean line. No alibis.",
+      "They wiped it twice. Try to deserve it."
+    ],
+    "pea": [
+      "A pea berry. Whispering violence across county lines.",
+      "Calipers say legal. Faces say otherwise."
+    ],
+    "cluster": [
+      "Five Pips underneath it and still no union.",
+      "Whole cluster. Finally, a food fight."
+    ],
+    "lug": [
+      "That is not ammunition. That is inventory fraud.",
+      "Signed, hoisted, and regretted in advance."
+    ]
+  },
+  "fire": [
+    "Fruit airborne. Hide the good glassware.",
+    "Gravity has the call from here.",
+    "Clean release. Filthy intention.",
+    "And the vintage is traveling."
+  ],
+  "hit": [
+    "Bottled.",
+    "Pressed with prejudice.",
+    "Appellation: forehead.",
+    "Put that stain in the permanent record.",
+    "That berry paid rent."
+  ],
+  "hardHit": [
+    "Two bottles gone. That one had paperwork.",
+    "That was not a tasting. That was collections.",
+    "Somebody call the cooper."
+  ],
+  "near": [
+    "Close enough to smell expensive.",
+    "Half a boot. The Pips will argue about it all winter.",
+    "That miss had intent."
+  ],
+  "miss": [
+    "You threw a grape at Kansas and Kansas won.",
+    "Notes of dirt. Long finish. No damage.",
+    "The hill accepts your donation.",
+    "A beautiful arc to nowhere taxable.",
+    "Wind was calm. Your hands were not."
+  ],
+  "self": [
+    "Harvested himself. Efficient, in a legal sense.",
+    "Eat your own inventory.",
+    "The only accurate betrayal in the yard."
+  ],
+  "split": [
+    "Cluster opened. Five little lawsuits.",
+    "Bunch broke clean. Everybody gets blamed."
+  ],
+  "streak": [
+    "Back-to-back stains. Somebody found the range.",
+    "Two in a row. Now it feels personal."
+  ],
+  "playerWin": [
+    "Vinegar. Seal the Late cart and sweep the stems.",
+    "The Yard takes the lot. Try to act surprised."
+  ],
+  "playerLose": [
+    "You couldn’t bust a grape in a food fight.",
+    "Must. The Pips have declined comment."
+  ],
+  "draw": [
+    "Compost. Everybody lost with conviction.",
+    "Mutual pulp. Put the whole lot in the ledger."
+  ]
+}

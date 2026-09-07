@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Bust A Grape app icon">
+  <rect width="512" height="512" rx="108" fill="#1A100C"/>
+  <path d="M64 82h384v348H64z" fill="#3A2A1C" stroke="#F3E6C8" stroke-width="14"/>
+  <path d="M78 99h356M78 413h356" stroke="#6B1C2A" stroke-width="14"/>
+  <g fill="#5A1638" stroke="#F3E6C8" stroke-width="7">
+    <circle cx="256" cy="178" r="48"/>
+    <circle cx="206" cy="229" r="48"/>
+    <circle cx="306" cy="229" r="48"/>
+    <circle cx="256" cy="281" r="48"/>
+    <circle cx="213" cy="329" r="42"/>
+    <circle cx="299" cy="329" r="42"/>
+  </g>
+  <path d="M256 133c-10-35 7-57 47-67-3 35-17 57-47 67Z" fill="#6B1C2A" stroke="#F3E6C8" stroke-width="7"/>
+  <path d="M209 207l25-11M303 196l25 11" stroke="#1A100C" stroke-width="13" stroke-linecap="round"/>
+  <path d="M225 239h62" stroke="#1A100C" stroke-width="12" stroke-linecap="round"/>
+  <path d="M184 354l-24 40M328 354l24 40M181 395h-31M331 395h31" stroke="#F3E6C8" stroke-width="12" stroke-linecap="round"/>
+  <path d="M134 116h61M317 116h61" stroke="#F3E6C8" stroke-width="12"/>
+  <circle cx="109" cy="116" r="10" fill="#6B1C2A"/>
+  <circle cx="403" cy="116" r="10" fill="#6B1C2A"/>
+</svg>

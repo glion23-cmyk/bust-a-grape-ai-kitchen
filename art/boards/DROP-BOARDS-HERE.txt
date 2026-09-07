@@ -1,0 +1,11 @@
+Put style boards in this folder.
+
+Suggested names:
+  board-01-playfield.png
+  board-02-pips.png
+  board-03-ammo.png
+  board-04-gui.png
+  board-master.png
+
+When you lock one: prefix APPROVED-
+Example: APPROVED-board-master.png

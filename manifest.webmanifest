@@ -1,0 +1,27 @@
+{
+  "id": "./",
+  "name": "BUST A GRAPE — Night Harvest League",
+  "short_name": "Bust A Grape",
+  "description": "An illegal Kansas harvest-league artillery food fight.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#1A100C",
+  "theme_color": "#1A100C",
+  "categories": ["games"],
+  "icons": [
+    {
+      "src": "art/gui/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "art/gui/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

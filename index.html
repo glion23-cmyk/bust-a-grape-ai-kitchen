@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#1a100c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Bust A Grape" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="format-detection" content="telephone=no" />
+  <title>BUST A GRAPE — Night Harvest League</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="art/gui/app-icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="art/gui/apple-touch-icon.png" />
+  <link rel="stylesheet" href="style.css?v=4" />
+</head>
+<body>
+  <div id="gameShell" class="game-shell">
+    <header class="masthead">
+      <div class="brand-plate" aria-label="Bust a Grape, Night Harvest League">
+        <span class="brand-kicker">PROPERTY OF NIGHT HARVEST LEAGUE</span>
+        <strong>BUST A GRAPE</strong>
+      </div>
+
+      <div class="broadcast" aria-live="polite">
+        <span class="broadcast-badge"><i></i> YARD RADIO</span>
+        <p id="line">You couldn’t bust a grape in a food fight.</p>
+      </div>
+
+      <button id="soundToggle" class="utility-button" type="button" aria-pressed="false">SOUND ON</button>
+    </header>
+
+    <main id="stage" class="stage">
+      <canvas id="c" width="1280" height="720" aria-label="Side-view artillery field. Drag from the field to aim, then release to fire."></canvas>
+      <div class="stage-grain" aria-hidden="true"></div>
+      <div class="stage-vignette" aria-hidden="true"></div>
+
+      <section id="worldHud" class="world-hud" aria-label="Match status">
+        <article id="yardCard" class="team-card team-card-yard active">
+          <div>
+            <span class="team-name">YARD</span>
+            <span class="machine-name">SIDEWINDER</span>
+          </div>
+          <div id="yardHp" class="bottle-rack" aria-label="Yard health"></div>
+        </article>
+
+        <div class="turn-stack">
+          <span id="lotChip" class="lot-chip">LOT 01</span>
+          <strong id="turnChip">PIPS ON THE LIP</strong>
+        </div>
+
+        <article id="lateCard" class="team-card team-card-late">
+          <div>
+            <span class="team-name">LATE</span>
+            <span class="machine-name">BOOTLEGGER</span>
+          </div>
+          <div id="lateHp" class="bottle-rack" aria-label="Late health"></div>
+        </article>
+
+        <div id="aimRail" class="aim-rail">
+          <div class="angle-readout">
+            <span>ANGLE</span>
+            <strong id="angleValue">50°</strong>
+          </div>
+          <div class="power-readout">
+            <div class="power-label"><span>JUICE</span><strong id="powerValue">50%</strong></div>
+            <div class="power-track"><i id="powerFill"></i></div>
+          </div>
+        </div>
+      </section>
+
+      <div id="protocolBanner" class="protocol-banner" hidden>
+        <span id="protocolLabel">TABLE PROTOCOL</span>
+        <strong id="protocolText">WIPE · WEIGH · NOD · CLEAR THE LIP</strong>
+      </div>
+
+      <div id="fieldHint" class="field-hint" hidden>
+        <strong>DRAG TO AIM</strong>
+        <span>Farther from your cart = more juice. Release to bust.</span>
+      </div>
+
+      <section id="titleScreen" class="screen title-screen">
+        <div class="title-copy">
+          <span class="league-stamp">KANSAS · BUGGY CLASS · LOT 12</span>
+          <img src="art/gui/lockup.png" alt="Bust a Grape" />
+          <p>Two illegal harvest rigs. Six bottles. One chalk-dirt ditch.</p>
+          <button id="startButton" class="hero-button" type="button">ENTER THE DITCH</button>
+          <span class="start-note">PICK A LOT · DRAG · RELEASE · LIVE WITH IT</span>
+        </div>
+      </section>
+
+      <section id="resultScreen" class="screen result-screen" hidden>
+        <span class="league-stamp">OFFICIAL NIGHT HARVEST RULING</span>
+        <h2 id="resultWord">VINEGAR.</h2>
+        <p id="resultCopy">The house folded. Fold the chairs.</p>
+        <div id="resultStats" class="result-stats"></div>
+        <button id="rematchButton" class="hero-button" type="button">RUN IT BACK</button>
+      </section>
+    </main>
+
+    <section id="controlDeck" class="control-deck" aria-label="Ammunition and controls">
+      <div class="deck-label">
+        <span>AMMO LOT</span>
+        <strong id="selectedLotName">TABLE BERRY</strong>
+      </div>
+      <div id="lots" class="lots"></div>
+      <div class="control-copy">
+        <strong id="controlHeadline">YOUR SHOT</strong>
+        <span id="controlHelp">Pick a lot. Drag anywhere on the field. Release to fire.</span>
+      </div>
+    </section>
+
+    <footer class="field-footer">
+      <span>VAT GROWN · FIGHT OWNED</span>
+      <span id="fieldStatus">THE DITCH / DUSK / WIND CALM</span>
+      <span>KEEP HANDS CLEAR, PIPS.</span>
+    </footer>
+  </div>
+
+  <aside id="rotationGate" class="rotation-gate" aria-label="Landscape orientation recommended">
+    <div class="rotate-phone" aria-hidden="true"></div>
+    <strong>TURN THE YARD SIDEWAYS</strong>
+    <span>BUST A GRAPE is built for landscape.</span>
+    <button id="portraitContinue" type="button">PLAY SMALL ANYWAY</button>
+  </aside>
+
+  <script src="game.js?v=4"></script>
+</body>
+</html>
