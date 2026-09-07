@@ -76,6 +76,7 @@ run_agy() {
       --model "$model" \
       --mode accept-edits \
       --sandbox \
+      --dangerously-skip-permissions \
       --print-timeout 30m0s \
       --output-format json \
       --print="$prompt"
