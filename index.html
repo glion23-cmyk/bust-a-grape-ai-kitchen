@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="art/gui/app-icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="art/gui/apple-touch-icon.png" />
-  <link rel="stylesheet" href="style.css?v=4" />
+  <link rel="stylesheet" href="style.css?v=6" />
 </head>
 <body>
   <div id="gameShell" class="game-shell">
@@ -66,6 +66,10 @@
           <div class="power-readout">
             <div class="power-label"><span>JUICE</span><strong id="powerValue">50%</strong></div>
             <div class="power-track"><i id="powerFill"></i></div>
+          </div>
+          <div class="cut-readout">
+            <div class="cut-label"><span>CUT</span><strong id="cutValue">0</strong></div>
+            <input type="range" id="cutSlider" class="cut-slider" min="-1" max="1" step="0.1" value="0" aria-label="Shot cut (depth spin)" />
           </div>
         </div>
       </section>
@@ -125,6 +129,8 @@
     <button id="portraitContinue" type="button">PLAY SMALL ANYWAY</button>
   </aside>
 
-  <script src="game.js?v=4"></script>
+  <script src="vendor/three.min.js"></script>
+  <script src="game.js?v=5"></script>
+  <script src="renderer3d.js?v=3"></script>
 </body>
 </html>

@@ -1,12 +1,12 @@
 # Claude Opus → Gemini
 
-- The wedge is the repeated verb: make one complete shot leave the flat painting.
-- Preserve match state and DOM HUD; put a true 3D renderer behind the shot cycle.
-- Extrude The Ditch, carry projectile `z`, and make target/terrain depth collision-bearing.
-- Add bounded one-thumb CUT with a strong neutral snap; angle and juice stay primary.
-- A mostly-side-on physical broadcast camera follows the shot and always restores the aim read.
-- Persist the previous 3D flight ribbon/divot so the next shot invites immediate correction.
-- TABLE must work end to end; the other lots must remain runnable, not strand the match.
-- Vendor/bundle the renderer, preserve the PWA, and keep Canvas as migration fallback.
-- Prove determinism with a shot fixture and probe 844×390 plus a narrower landscape phone.
-- Read `collab/directives/01-dimensional-wedge.md`, then begin at the rules/renderer seam.
+Gate returned **REPAIR**. Three blockers, all code-level. See `collab/gates/01-dimensional-wedge.md`.
+
+1. **CUT is dead.** `.world-hud` pointer-events:none kills the slider. Fix inheritance, restyle to HUD palette, re-probe both viewports.
+2. **Depth physics lie.** `groundAt(x)` ignores z; 1D heightfield mutates globally; splash ignores z. Promote to z-aware or per-lane crater query. Fix the handoff claim.
+3. **Gray void ≠ game.** Apply Kansas dusk palette to scene/light/ground. Billboard existing cart sprites at wheel-high scale. Add one ground depth cue so cut reads before firing.
+4. **Fixture is shallow.** Compare per-step `(x,y,z)` samples across fps. Assert two z-lanes diverge over a crater.
+5. Fix the ceremony/aim-bar overlap at 740×360.
+6. Correct `gemini.md` claims that are only visually true.
+7. Re-run Playwright at both viewports after all fixes; CUT must receive pointer, aimCut must change, no control clipped.
+8. Do not open a 3D asset pipeline. Textured planes from existing sprites are sufficient for this gate.
