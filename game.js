@@ -20,6 +20,7 @@
   window.visualViewport?.addEventListener("resize", syncVisualViewport, { passive: true });
 
   const DOM = {
+    bootScreen: document.getElementById("bootScreen"),
     line: document.getElementById("line"),
     worldHud: document.getElementById("worldHud"),
     yardCard: document.getElementById("yardCard"),
@@ -28,6 +29,10 @@
     lateHp: document.getElementById("lateHp"),
     lotChip: document.getElementById("lotChip"),
     turnChip: document.getElementById("turnChip"),
+    aimTelemetry: document.getElementById("aimTelemetry"),
+    aimAngleValue: document.getElementById("aimAngleValue"),
+    aimPowerValue: document.getElementById("aimPowerValue"),
+    aimLaneValue: document.getElementById("aimLaneValue"),
     protocolBanner: document.getElementById("protocolBanner"),
     protocolLabel: document.getElementById("protocolLabel"),
     protocolText: document.getElementById("protocolText"),
@@ -53,6 +58,56 @@
     controlHelp: document.getElementById("controlHelp"),
     fieldStatus: document.getElementById("fieldStatus")
   };
+
+  const bootStartedAt = performance.now();
+  let bootRendererReady = false;
+  let bootFontsReady = !document.fonts;
+
+  function finishBoot(force = false) {
+    if (!DOM.bootScreen || DOM.bootScreen.classList?.contains?.("ready")) return;
+    if (!force && (!bootRendererReady || !bootFontsReady)) return;
+    const minimumHold = Math.max(0, 260 - (performance.now() - bootStartedAt));
+    window.setTimeout(() => DOM.bootScreen?.classList.add("ready"), minimumHold);
+  }
+
+  window.addEventListener("bag:renderer-ready", () => {
+    bootRendererReady = true;
+    finishBoot();
+  }, { once: true });
+
+  if (document.fonts) {
+    document.fonts.ready.then(() => {
+      bootFontsReady = true;
+      finishBoot();
+    });
+  }
+
+  window.setTimeout(() => finishBoot(true), 3200);
+
+  const screenTimers = new WeakMap();
+
+  function revealScreen(element) {
+    if (!element) return;
+    window.clearTimeout?.(screenTimers.get(element));
+    element.classList.remove("is-leaving");
+    element.hidden = false;
+  }
+
+  function concealScreen(element, immediate = false) {
+    if (!element || element.hidden) return;
+    window.clearTimeout?.(screenTimers.get(element));
+    if (immediate) {
+      element.hidden = true;
+      element.classList.remove("is-leaving");
+      return;
+    }
+    element.classList.add("is-leaving");
+    const timer = window.setTimeout(() => {
+      element.hidden = true;
+      element.classList.remove("is-leaving");
+    }, 190);
+    screenTimers.set(element, timer);
+  }
 
   const COLORS = {
     dirt: "#3a2a1c",
@@ -100,7 +155,7 @@
     table: { color: [COLORS.juice, COLORS.cream], kind: "juice", shape: "drop", punch: -120, primary: 20, vy: -35, vz: 175, size: 1.65 },
     pea: { color: COLORS.cream, kind: "smoke", shape: "spark", punch: -100, primary: 24, vy: -135, vz: 95, size: 0.9 },
     cluster: { color: [COLORS.oxblood, COLORS.cream], kind: "juice", shape: "shard", punch: -140, primary: 22, vx: 135, vy: -55, vz: 145, size: 1.75 },
-    lug: { color: [COLORS.copper, COLORS.ink], kind: "dirt", shape: "clod", punch: -180, primary: 17, vy: -165, vz: 125, size: 1.42 }
+    lug: { color: [COLORS.juice, COLORS.oxblood, COLORS.copper, COLORS.ink], kind: "dirt", shape: "clod", punch: -195, primary: 24, vy: -185, vz: 155, size: 1.68 }
   };
 
   const CEREMONY_CALLS = {
@@ -191,15 +246,67 @@
   class SoundBoard {
     constructor() {
       this.context = null;
+      this.output = null;
+      this.sampleBuffers = new Map();
+      this.sampleLoadPromise = null;
+      this.sampleUrls = {
+        press: "audio/sfx/ui-press.mp3",
+        select: "audio/sfx/ui-select.mp3",
+        launcher: "audio/sfx/launcher-clank.mp3",
+        impact: "audio/sfx/grape-impact.mp3",
+        bottle: "audio/sfx/bottle-break.mp3"
+      };
       this.enabled = true;
     }
 
     wake() {
       if (!this.context) {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (AudioContext) this.context = new AudioContext();
+        if (AudioContext) {
+          this.context = new AudioContext();
+          const compressor = this.context.createDynamicsCompressor();
+          const master = this.context.createGain();
+          compressor.threshold.value = -18;
+          compressor.knee.value = 14;
+          compressor.ratio.value = 5;
+          compressor.attack.value = 0.004;
+          compressor.release.value = 0.16;
+          master.gain.value = 0.78;
+          master.connect(compressor).connect(this.context.destination);
+          this.output = master;
+          this.loadSamples();
+        }
       }
       if (this.context?.state === "suspended") this.context.resume();
+    }
+
+    loadSamples() {
+      if (this.sampleLoadPromise || !this.context || typeof window.fetch !== "function") return this.sampleLoadPromise;
+      this.sampleLoadPromise = Promise.all(Object.entries(this.sampleUrls).map(async ([name, url]) => {
+        try {
+          const response = await window.fetch(url);
+          if (!response.ok) return;
+          const audioData = await response.arrayBuffer();
+          const buffer = await this.context.decodeAudioData(audioData);
+          this.sampleBuffers.set(name, buffer);
+        } catch (_) {
+          // The synthesized layer keeps every cue functional offline or on old browsers.
+        }
+      }));
+      return this.sampleLoadPromise;
+    }
+
+    sample(name, volume = 0.2, playbackRate = 1) {
+      if (!this.enabled || !this.context) return;
+      const buffer = this.sampleBuffers.get(name);
+      if (!buffer) return;
+      const source = this.context.createBufferSource();
+      const gain = this.context.createGain();
+      source.buffer = buffer;
+      source.playbackRate.value = playbackRate;
+      gain.gain.value = volume;
+      source.connect(gain).connect(this.output || this.context.destination);
+      source.start();
     }
 
     tone(frequency, duration, type = "sine", volume = 0.08, endFrequency = frequency) {
@@ -210,9 +317,10 @@
       oscillator.type = type;
       oscillator.frequency.setValueAtTime(Math.max(20, frequency), now);
       oscillator.frequency.exponentialRampToValueAtTime(Math.max(20, endFrequency), now + duration);
-      gain.gain.setValueAtTime(volume, now);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(volume, now + Math.min(0.012, duration * 0.18));
       gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-      oscillator.connect(gain).connect(this.context.destination);
+      oscillator.connect(gain).connect(this.output || this.context.destination);
       oscillator.start(now);
       oscillator.stop(now + duration);
     }
@@ -230,23 +338,31 @@
       filter.frequency.value = lowpass;
       gain.gain.value = volume;
       source.buffer = buffer;
-      source.connect(filter).connect(gain).connect(this.context.destination);
+      source.connect(filter).connect(gain).connect(this.output || this.context.destination);
       source.start();
     }
 
     play(name, lotId = "table") {
       if (!this.enabled) return;
       this.wake();
-      if (name === "start") {
+      if (name === "press") {
+        this.sample("press", 0.24, 0.96);
+        this.tone(310, 0.035, "square", 0.018, 210);
+        this.noise(0.025, 0.014, 2400);
+      } else if (name === "start") {
         this.tone(98, 0.22, "sawtooth", 0.06, 147);
         window.setTimeout(() => this.tone(196, 0.22, "square", 0.035, 247), 110);
       } else if (name === "select") {
+        this.sample("select", 0.22, 0.9 + Math.random() * 0.08);
         this.tone(170, 0.055, "square", 0.035, 130);
       } else if (name === "launch") {
+        this.sample("launcher", lotId === "lug" ? 0.44 : 0.3, lotId === "pea" ? 1.16 : lotId === "lug" ? 0.78 : 0.96);
+        this.tone(980, 0.045, "square", 0.025, 430);
         if (lotId === "pea") this.tone(520, 0.13, "square", 0.055, 240);
         else if (lotId === "lug") {
           this.noise(0.28, 0.12, 640);
           this.tone(74, 0.36, "sawtooth", 0.11, 38);
+          window.setTimeout(() => this.noise(0.12, 0.055, 2100), 55);
         } else {
           this.noise(0.16, 0.07, 950);
           this.tone(130, 0.2, "triangle", 0.07, 72);
@@ -255,9 +371,12 @@
         this.noise(0.12, 0.055, 1800);
         this.tone(330, 0.09, "square", 0.035, 520);
       } else if (name === "impact") {
+        this.sample("impact", lotId === "lug" ? 0.62 : 0.38, lotId === "pea" ? 1.18 : lotId === "lug" ? 0.72 : 0.94);
         this.noise(lotId === "lug" ? 0.36 : 0.2, lotId === "lug" ? 0.16 : 0.09, lotId === "lug" ? 520 : 1200);
         this.tone(lotId === "lug" ? 52 : 92, lotId === "lug" ? 0.38 : 0.22, "sawtooth", 0.08, 34);
+        window.setTimeout(() => this.noise(0.11, 0.035, 2600), 28);
       } else if (name === "bottle") {
+        this.sample("bottle", 0.42, 0.9 + Math.random() * 0.14);
         this.tone(880, 0.12, "triangle", 0.04, 420);
       } else if (name === "win") {
         [110, 147, 196].forEach((frequency, index) => window.setTimeout(() => this.tone(frequency, 0.34, "sawtooth", 0.055, frequency * 1.35), index * 100));
@@ -447,6 +566,7 @@
 
   function updateHud() {
     const lot = LOTS[state.selected];
+    if (document.body.dataset) document.body.dataset.gameMode = state.mode;
     const playerCanAim = state.mode === "match" && state.turn === "player" && state.phase === "aim";
     DOM.yardCard.classList.toggle("active", state.mode === "match" && state.turn === "player");
     DOM.lateCard.classList.toggle("active", state.mode === "match" && state.turn === "enemy");
@@ -459,8 +579,17 @@
       : playerCanAim
         ? state.dragging
           ? `${Math.round(state.aimAngle)}° LIFT · ${Math.abs(state.aimCut) < 0.12 ? "STRAIGHT LANE" : `${state.aimCut < 0 ? "LEFT" : "RIGHT"} HOOK ${Math.round(Math.abs(state.aimCut) * 100)}`}`
-          : `${windReadout()} · ${state.stats?.shots > 0 ? "THE CHALK REMEMBERS" : "GRAB THE CYAN RING"}`
+          : `${windReadout()} · ${state.stats?.shots > 0 ? "THE CHALK REMEMBERS" : "GRAB THE LIT RING"}`
         : state.mode === "title" ? "Enter the ditch to begin." : "Hands clear while the lot is moving.";
+    const showAimTelemetry = playerCanAim && state.dragging;
+    DOM.aimTelemetry.hidden = !showAimTelemetry;
+    if (showAimTelemetry) {
+      DOM.aimAngleValue.textContent = `${Math.round(state.aimAngle)}°`;
+      DOM.aimPowerValue.textContent = `${Math.round(state.aimPower)}%`;
+      DOM.aimLaneValue.textContent = Math.abs(state.aimCut) < 0.12
+        ? "STRAIGHT"
+        : `${state.aimCut < 0 ? "LEFT" : "RIGHT"} ${Math.round(Math.abs(state.aimCut) * 100)}`;
+    }
     renderBottles(DOM.yardHp, carts.player.hp, "Yard health");
     renderBottles(DOM.lateHp, carts.enemy.hp, "Late health");
     DOM.lots.querySelectorAll("button").forEach((button) => {
@@ -537,8 +666,8 @@
     carts.player.hp = carts.player.maxHp;
     carts.enemy.hp = carts.enemy.maxHp;
     resetTerrain();
-    DOM.titleScreen.hidden = true;
-    DOM.resultScreen.hidden = true;
+    concealScreen(DOM.titleScreen);
+    concealScreen(DOM.resultScreen);
     DOM.worldHud.hidden = false;
     DOM.protocolBanner.hidden = true;
     DOM.fieldHint.hidden = false;
@@ -598,12 +727,12 @@
     if (seriesActive) {
       DOM.grudgeScore.textContent = `${rivalry.seriesYard} - ${rivalry.seriesLate}`;
       DOM.grudgeLeader.className = `grudge-leader ${rivalry.seriesLate > rivalry.seriesYard ? 'late' : ''}`;
-      DOM.grudgeCard.hidden = false;
+      revealScreen(DOM.grudgeCard);
       DOM.worldHud.hidden = true;
       return;
     }
 
-    DOM.resultScreen.hidden = false;
+    revealScreen(DOM.resultScreen);
 
     if (state.series) {
       const playerSeriesWon = rivalry.seriesYard >= 2;
@@ -865,6 +994,7 @@
       window.__BAG__.gestureState.state = "idle";
       window.__BAG__.gestureState.valid = false;
     }
+    updateHud();
   }
 
   canvas.addEventListener("pointerdown", (event) => {
@@ -896,6 +1026,7 @@
 
     gestureHistory.length = 0;
     gestureHistory.push({ x: event.clientX, y: event.clientY });
+    updateHud();
   });
 
   canvas.addEventListener("pointermove", (event) => {
@@ -1000,7 +1131,7 @@
   DOM.rematchButton.addEventListener("click", startSingle);
   DOM.rematchSeriesButton.addEventListener("click", startSeries);
   DOM.grudgeNext.addEventListener("click", () => {
-    DOM.grudgeCard.hidden = true;
+    concealScreen(DOM.grudgeCard);
     startMatch();
   });
   DOM.soundToggle.addEventListener("click", () => {
@@ -1013,6 +1144,14 @@
     DOM.soundToggle.setAttribute("aria-pressed", String(sound.enabled));
   });
   DOM.portraitContinue.addEventListener("click", () => document.body.classList.add("portrait-accepted"));
+
+  document.addEventListener?.("pointerdown", (event) => {
+    const button = event.target.closest?.("button:not(:disabled)");
+    if (!button) return;
+    haptic(5);
+    sound.wake();
+    sound.play("press");
+  }, { passive: true });
 
   buildLotButtons();
   DOM.worldHud.hidden = true;
@@ -1137,8 +1276,11 @@
       state.rutGhost = { trail: [...projectile.trail], impactX, impactY, z: projectile.z, lotId: projectile.lotId };
     }
     craterAt(impactX, projectile.z || 0, lot.craterRadius * childScale, lot.craterDepth * childScale);
-    addStain(impactX, lot.id, lot.id === "lug" ? 1.75 : projectile.child ? 0.62 : 1);
+    addStain(impactX, lot.id, lot.id === "lug" ? 2.1 : projectile.child ? 0.62 : 1);
     addRing(impactX, impactY, lot.splashRadius || lot.craterRadius, lot.id === "pea" ? COLORS.cream : COLORS.juice);
+    if (lot.id === "lug" && !projectile.child) {
+      addRing(impactX, impactY, lot.craterRadius * 1.42, COLORS.cream);
+    }
     const targetCart = projectile.owner === "player" ? carts.enemy : carts.player;
     const zAcc = zAccuracy(projectile.z || 0, targetCart.z || 0);
     const pZ = projectile.z || 0;
@@ -1152,7 +1294,9 @@
         x: impactX,
         y: impactY,
         z: pZ,
-        life: 0.72,
+        life: 0.92,
+        maxLife: 0.92,
+        radius: Math.max(lot.craterRadius, lot.splashRadius || 0),
         tier: zAcc.tier,
         lotId: lot.id
       };

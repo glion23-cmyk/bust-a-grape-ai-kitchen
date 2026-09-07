@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node scripts/test-fixture.js && node scripts/test-zaccuracy.js",
     "test:browser": "node scripts/playwright-test.js",
-    "evidence": "npm run test:browser && node scripts/capture-ceremony.js"
+    "test:pwa": "./scripts/build-pages.sh && node scripts/pwa-smoke.js",
+    "evidence": "npm run test:browser && node scripts/capture-premium.js"
   },
   "keywords": [],
   "author": "",

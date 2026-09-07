@@ -13,7 +13,7 @@ This file is what the rebuilt playable slice actually has versus what a fuller 1
 - Pips: walking grape **bunches** with arms, legs, stem, boots, stern face
 - Pips are not Minions and not rats
 - Mouth: text, PG-13
-- Oneshot audio: synth SFX only
+- Oneshot audio: compact CC0 sample transients layered with responsive Web Audio synthesis
 - Delivery: mobile-first web/PWA. Current candidate is HTML + procedural Three.js WebGL; the old Canvas path is not feature-complete.
 
 ## Have (in this folder)
@@ -23,7 +23,7 @@ This file is what the rebuilt playable slice actually has versus what a fuller 1
 | Rebuilt playable slice | `index.html` `game.js` `style.css` |
 | Approved middle-ground board | `art/boards/APPROVED-board-J-kansas-buggy-class.jpg` |
 | Production world art | `art/sprites/kansas-dusk.jpg`, `sidewinder.png`, `bootlegger.png`, `pip-merlot.png` |
-| Production title lockup | `art/gui/lockup.png` |
+| Production title lockup | `art/gui/lockup.webp` (optimized runtime), `art/gui/lockup.png` (source) |
 | Mobile install/offline shell | `manifest.webmanifest`, `sw.js`, `art/gui/app-icon.svg`, `art/gui/apple-touch-icon.png` |
 | Hardened hosting bundle | `scripts/build-pages.sh`, `hosting/_headers`, `hosting/robots.txt` |
 | Public phone build | `https://bust-a-grape.pages.dev` |
@@ -83,7 +83,8 @@ Do not build Sidewinder/Bootlegger at full blueprint scale.
 - Round 01: true projectile depth, z-aware carts/terrain/splash, 3D dirt mesh, physical broadcast camera, Kansas launcher/Pip billboards, CUT control, and automatic Canvas degradation.
 - Round 02: Dead Lane/Graze/Wide depth grades, distinct four-lot impacts, 3/3/5/5-Pip launch tableaux, best-of-three Grudge Cards, and persistent local rivalry history.
 - Round 03: launcher-origin Pull + Shape, compact procedural launchers/Pips/ammunition, bright Kansas daylight, modern cream/wine HUD, camera ceremonies, haptics, and persistent 3D stains.
-- Browser gates: exact 740×360 and 844×390 layouts, opponent-tap rejection, dead-zone cancellation, strong low-pull reach, complete player/AI loop, deterministic scoring shot, seeded AI balance, and packaged-build smoke.
+- Premium shell: Three.js r185 modules, adaptive Retina output, PCF shadows, restrained bloom, environment-lit metal/grape materials, full-viewport desktop and phone presentation, bundled typography, real press states, animated screen changes, boot gating, hybrid sampled/synthesized audio, a clean pull tether with live telemetry, and an authored heavy-impact shock treatment.
+- Browser gates: 568×320 through 932×430 phone layouts, 1440×900 desktop, opponent-tap rejection, dead-zone cancellation, strong low-pull reach, complete player/AI loop, deterministic scoring shot, seeded AI balance, install-cache completeness, and a forced-offline 3D boot.
 - Hosted branch preview is deliberately separate from the stable public alias until physical iPhone/Android playtesting clears it.
 
 ## Need for oneshot 1.0 — not boards
@@ -97,13 +98,13 @@ The oneshot is playable with production art and procedural effects. “Oneshot 1
 - [x] Impact pulp, dirt, persistent stain, crater, and shake feedback
 - [x] Bright Kansas daylight, 3D destructible dirt, juice stains, and impact treatment
 - [x] Title lockup, crate lot buttons, juice rail, bottles, broadcast line, and result cards
-- [x] Synthesized thump, snap, split, splat, bottle, UI, and result cues
+- [x] Sampled + synthesized thump, snap, split, splat, bottle, UI, and result cues
 - [x] Browser phone-landscape layout and touch-distance test
 - [x] PWA manifest, app icons, and offline rematch shell
 
 ### Still worth producing for 1.0
 - [ ] Authored Pip model/rig pass beyond the current procedural bunches and ceremony props
-- [ ] Recorded and mixed SFX replacing procedural synthesis
+- [ ] Original field-recorded farm/fruit SFX and a final studio mix beyond the current CC0 hybrid layer
 - [ ] One original title hook / reactive score sketch
 - [ ] Physical iPhone and Android landscape playtest; tune drag curve from actual thumbs
 - [ ] Accessibility options beyond sound and reduced-motion support

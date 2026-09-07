@@ -1,20 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Bust A Grape app icon">
   <rect width="512" height="512" rx="108" fill="#1A100C"/>
-  <path d="M64 82h384v348H64z" fill="#3A2A1C" stroke="#F3E6C8" stroke-width="14"/>
-  <path d="M78 99h356M78 413h356" stroke="#6B1C2A" stroke-width="14"/>
-  <g fill="#5A1638" stroke="#F3E6C8" stroke-width="7">
-    <circle cx="256" cy="178" r="48"/>
-    <circle cx="206" cy="229" r="48"/>
-    <circle cx="306" cy="229" r="48"/>
-    <circle cx="256" cy="281" r="48"/>
-    <circle cx="213" cy="329" r="42"/>
-    <circle cx="299" cy="329" r="42"/>
+  <rect x="22" y="22" width="468" height="468" rx="88" fill="#8AA7B8" stroke="#F3E6C8" stroke-width="10"/>
+  <path d="M22 358Q132 296 254 356T490 336v154H22Z" fill="#3A2A1C"/>
+  <circle cx="391" cy="122" r="49" fill="#F3E6C8" opacity=".74"/>
+  <path d="M65 116h169M65 142h128" stroke="#6B1C2A" stroke-width="13" stroke-linecap="round" opacity=".9"/>
+  <path d="M318 122q58 6 103 43" fill="none" stroke="#5A1638" stroke-width="10" stroke-linecap="round" stroke-dasharray="5 27"/>
+  <g stroke="#1A100C" stroke-width="11" stroke-linejoin="round">
+    <circle cx="256" cy="158" r="42" fill="#5A1638"/>
+    <circle cx="214" cy="200" r="43" fill="#6B1C2A"/>
+    <circle cx="298" cy="200" r="43" fill="#5A1638"/>
+    <circle cx="187" cy="250" r="42" fill="#6B1C2A"/>
+    <circle cx="325" cy="250" r="42" fill="#5A1638"/>
+    <circle cx="220" cy="299" r="43" fill="#6B1C2A"/>
+    <circle cx="292" cy="299" r="43" fill="#5A1638"/>
+    <circle cx="256" cy="345" r="40" fill="#5A1638"/>
+    <circle cx="256" cy="238" r="50" fill="#5A1638"/>
   </g>
-  <path d="M256 133c-10-35 7-57 47-67-3 35-17 57-47 67Z" fill="#6B1C2A" stroke="#F3E6C8" stroke-width="7"/>
-  <path d="M209 207l25-11M303 196l25 11" stroke="#1A100C" stroke-width="13" stroke-linecap="round"/>
-  <path d="M225 239h62" stroke="#1A100C" stroke-width="12" stroke-linecap="round"/>
-  <path d="M184 354l-24 40M328 354l24 40M181 395h-31M331 395h31" stroke="#F3E6C8" stroke-width="12" stroke-linecap="round"/>
-  <path d="M134 116h61M317 116h61" stroke="#F3E6C8" stroke-width="12"/>
-  <circle cx="109" cy="116" r="10" fill="#6B1C2A"/>
-  <circle cx="403" cy="116" r="10" fill="#6B1C2A"/>
+  <path d="M255 119q-12-62 48-82 4 52-48 82Z" fill="#31543F" stroke="#1A100C" stroke-width="11" stroke-linejoin="round"/>
+  <path d="M168 260 111 292M344 260l57 32" stroke="#1A100C" stroke-width="15" stroke-linecap="round"/>
+  <path d="m220 365-23 63m95-63 23 63" stroke="#1A100C" stroke-width="17" stroke-linecap="round"/>
+  <path d="M157 423h57M298 423h57" stroke="#1A100C" stroke-width="27" stroke-linecap="round"/>
+  <path d="m210 207 29 11m63-11-29 11" stroke="#F3E6C8" stroke-width="15" stroke-linecap="round"/>
+  <path d="M226 263q30-17 61 0" fill="none" stroke="#1A100C" stroke-width="13" stroke-linecap="round"/>
+  <circle cx="227" cy="229" r="7" fill="#1A100C"/>
+  <circle cx="285" cy="229" r="7" fill="#1A100C"/>
+  <path d="M104 328h50m204 0h50" stroke="#F3E6C8" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="104" cy="328" r="20" fill="none" stroke="#F3E6C8" stroke-width="8"/>
+  <circle cx="408" cy="328" r="20" fill="none" stroke="#F3E6C8" stroke-width="8"/>
 </svg>

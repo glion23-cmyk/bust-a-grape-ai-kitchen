@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#1a100c" />
+  <meta name="theme-color" content="#3a2a1c" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Bust A Grape" />
@@ -13,9 +13,22 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="art/gui/app-icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="art/gui/apple-touch-icon.png" />
-  <link rel="stylesheet" href="style.css?v=8" />
+  <link rel="preload" href="assets/fonts/barlow-condensed-latin-900-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/fonts/barlow-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="art/gui/lockup.webp" as="image" type="image/webp" fetchpriority="high" />
+  <link rel="stylesheet" href="style.css?v=9" />
 </head>
 <body>
+  <div id="bootScreen" class="boot-screen" role="status" aria-live="polite">
+    <div class="boot-mark">
+      <span>PROPERTY OF NIGHT HARVEST LEAGUE</span>
+      <strong>BUST A GRAPE</strong>
+      <em>WICHITA COUNTY LINE · BUGGY CLASS</em>
+      <div class="boot-progress" aria-hidden="true"><i></i></div>
+      <small>WARMING FLYWHEELS</small>
+    </div>
+  </div>
+
   <div id="gameShell" class="game-shell">
     <header class="masthead">
       <div class="brand-plate" aria-label="Bust a Grape, Night Harvest League">
@@ -61,6 +74,12 @@
 
       </section>
 
+      <div id="aimTelemetry" class="aim-telemetry" hidden aria-live="off">
+        <span>LIFT <b id="aimAngleValue">50°</b></span>
+        <span>JUICE <b id="aimPowerValue">50%</b></span>
+        <span>LANE <b id="aimLaneValue">STRAIGHT</b></span>
+      </div>
+
       <div id="protocolBanner" class="protocol-banner" hidden>
         <span id="protocolLabel">TABLE PROTOCOL</span>
         <strong id="protocolText">WIPE · WEIGH · NOD · CLEAR THE LIP</strong>
@@ -68,17 +87,17 @@
 
       <div id="fieldHint" class="field-hint" hidden>
         <strong>DRAG TO AIM</strong>
-        <span>Grab the cyan launch ring. Pull back, shape the lane, release.</span>
+        <span>Grab the lit launch ring. Pull back, shape the lane, release.</span>
       </div>
 
       <section id="titleScreen" class="screen title-screen">
         <div class="title-copy">
           <span class="league-stamp">KANSAS · BUGGY CLASS · LOT 12</span>
-          <img src="art/gui/lockup.png" alt="Bust a Grape" />
+          <img src="art/gui/lockup.webp" alt="Bust a Grape" width="1024" height="1024" />
           <p>Two illegal harvest rigs. Eight bottles. One county-line grudge.</p>
-          <div class="button-row" style="display:flex; gap:16px; margin:24px 0 16px;">
-            <button id="startButton" class="hero-button" type="button">SINGLE MATCH</button>
-            <button id="startSeriesButton" class="hero-button" type="button">BEST-OF-3 SERIES</button>
+          <div class="button-row title-actions">
+            <button id="startButton" class="hero-button primary-action" type="button">PLAY</button>
+            <button id="startSeriesButton" class="hero-button secondary-action" type="button">BEST OF 3</button>
           </div>
           <span class="start-note">PICK A LOT · DRAG · RELEASE · LIVE WITH IT</span>
         </div>
@@ -89,7 +108,7 @@
         <h2 id="resultWord">VINEGAR.</h2>
         <p id="resultCopy">The house folded. Fold the chairs.</p>
         <div id="resultStats" class="result-stats"></div>
-        <div class="button-row" style="display:flex; gap:16px; margin:24px 0 16px;">
+        <div class="button-row result-actions">
           <button id="rematchButton" class="hero-button" type="button">RUN IT BACK</button>
           <button id="rematchSeriesButton" class="hero-button" type="button">START NEW SERIES</button>
         </div>
@@ -131,8 +150,7 @@
     <button id="portraitContinue" type="button">PLAY SMALL ANYWAY</button>
   </aside>
 
-  <script src="vendor/three.min.js"></script>
-  <script src="game.js?v=7"></script>
-  <script src="renderer3d.js?v=5"></script>
+  <script src="game.js?v=9"></script>
+  <script type="module" src="renderer3d.js?v=7"></script>
 </body>
 </html>

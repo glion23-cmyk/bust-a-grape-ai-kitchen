@@ -2,7 +2,10 @@
 
 ## Status
 
-The owner rejected the current build. It is a functioning prototype and test harness, not an approved visual or gameplay target. Do not merely polish it, reskin it, or preserve its current launcher geometry.
+The public `fix/premium-shell` branch is the current complete reference baseline.
+It repairs the rejected web shell with a modern renderer, full-bleed mobile layout,
+true pull aiming, distinct launcher mechanisms, bundled type/audio, and expanded
+browser gates. It is useful code, not sacred art direction.
 
 ## Mission
 
@@ -18,6 +21,10 @@ Pips remain stern walking grape bunches with stems, arms, legs, and boots. They 
 - Four ammunition behaviors: TABLE, PEA, CLUSTER, and LUG.
 - Player/AI turn loop, four-bottle health, best-of-three rivalry, announcer system, PWA shell, and mobile viewport handling.
 - Browser/unit tests and evidence capture scripts.
+- Adaptive Three.js r185 rendering, soft PCF shadows, restrained post-processing,
+  environment-lit materials, and a Canvas fallback.
+- A tactile pull tether with live lift/juice/depth-lane telemetry; opponent taps
+  are ignored by construction.
 - Source boards and competing visual lanes under `art/boards/`.
 - Opus/Gemini collaboration records under `collab/`.
 
@@ -48,8 +55,12 @@ Keep, rewrite, or delete any implementation as needed. Preserve only what helps 
 npm install
 npm test
 npm run test:browser
+npm run test:pwa
 ./scripts/build-pages.sh
 python3 -m http.server 4173 --bind 0.0.0.0
 ```
 
-The current experimental branch is `rebuild/modern-kansas`. The stable historical baseline is `main`. Both are intentionally available so a fork can salvage systems without inheriting the rejected look.
+The current reference branch is `fix/premium-shell`. The rejected-but-functional
+Round 03 baseline remains at `rebuild/modern-kansas`, and the historical baseline
+is `main`. That history is intentional: fork the strongest systems without being
+forced to inherit any one visual lane.

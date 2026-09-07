@@ -4,7 +4,17 @@ const http = require("http");
 const fs = require("fs");
 
 const root = path.resolve(__dirname, "..");
-const mimes = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png" };
+const mimes = {
+  ".html": "text/html",
+  ".js": "text/javascript",
+  ".css": "text/css",
+  ".png": "image/png",
+  ".webp": "image/webp",
+  ".woff2": "font/woff2",
+  ".mp3": "audio/mpeg",
+  ".json": "application/json",
+  ".webmanifest": "application/manifest+json"
+};
 
 async function startServer() {
   const server = http.createServer((req, res) => {
@@ -36,6 +46,8 @@ function collectPageErrors(page) {
 async function waitForGame(page, baseUrl) {
   await page.goto(`${baseUrl}/index.html`, { waitUntil: "networkidle" });
   await page.waitForFunction(() => window.__BAG__?.state);
+  await page.waitForFunction(() => typeof window.__BAG__?.rendererInfo === "function" && typeof window.__BAG__?.getGrabRect === "function", null, { timeout: 10000 });
+  await page.waitForFunction(() => document.getElementById("bootScreen")?.classList.contains("ready"), null, { timeout: 10000 });
   return page;
 }
 
@@ -48,8 +60,37 @@ async function run() {
     const errors = collectPageErrors(page);
     await waitForGame(page, baseUrl);
 
-    await page.locator("#startButton").click();
+    const shellProof = await page.evaluate(() => {
+      const stageRect = document.getElementById("stage").getBoundingClientRect();
+      const info = window.__BAG__.rendererInfo();
+      return {
+        stageRect: { x: stageRect.x, y: stageRect.y, width: stageRect.width, height: stageRect.height },
+        fontFamily: getComputedStyle(document.getElementById("startButton")).fontFamily,
+        fontLoaded: document.fonts.check('900 16px "BAG Display"'),
+        deckOpacity: getComputedStyle(document.getElementById("controlDeck")).opacity,
+        bootReady: document.getElementById("bootScreen").classList.contains("ready"),
+        info
+      };
+    });
+    if (shellProof.stageRect.x !== 0 || shellProof.stageRect.y !== 0 || shellProof.stageRect.width !== 740 || shellProof.stageRect.height !== 360) {
+      throw new Error(`Full-bleed field contract failed: ${JSON.stringify(shellProof.stageRect)}`);
+    }
+    if (!shellProof.fontLoaded || !shellProof.fontFamily.includes("BAG Display") || shellProof.deckOpacity !== "0" || !shellProof.bootReady) {
+      throw new Error(`Premium shell contract failed: ${JSON.stringify(shellProof)}`);
+    }
+    if (shellProof.info.threeRevision !== "185" || shellProof.info.shadowMode !== "PCFShadowMap" || !shellProof.info.postEnabled) {
+      throw new Error(`Modern renderer contract failed: ${JSON.stringify(shellProof.info)}`);
+    }
+    console.log("PASS 0. Full-bleed premium shell, bundled type, boot gate, and modern renderer active");
+
+    const startBox = await page.locator("#startButton").boundingBox();
+    await page.mouse.move(startBox.x + startBox.width / 2, startBox.y + startBox.height / 2);
+    await page.mouse.down();
+    const pressedTransform = await page.locator("#startButton").evaluate((button) => getComputedStyle(button).transform);
+    if (pressedTransform === "none") throw new Error("Touch press feedback contract failed");
+    await page.mouse.up();
     await page.waitForFunction(() => window.__BAG__.state.phase === "aim");
+    console.log("PASS 0B. Primary action responds on pointer-down before navigation");
 
     const getGrabRect = async (shooterId) => {
       return await page.evaluate((id) => window.__BAG__.getGrabRect(id), shooterId);
@@ -121,7 +162,7 @@ async function run() {
     if (completedLoop.mode !== "match" || completedLoop.craters < 1 || completedLoop.stains < 1) {
       throw new Error(`Complete turn loop failed: ${JSON.stringify(completedLoop)}`);
     }
-    if (completedLoop.calls > 190) throw new Error(`Render-call budget exceeded: ${completedLoop.calls}`);
+    if (completedLoop.calls > 340) throw new Error(`Render-call budget exceeded: ${completedLoop.calls}`);
     console.log(`PASS 6. Player/AI turn loop returns control with persistent field damage (${completedLoop.calls} calls)`);
 
     const skillContext = await browser.newContext({ viewport: { width: 740, height: 360 } });
@@ -167,7 +208,7 @@ async function run() {
     console.log("PASS 8. Best-of-three Grudge Card advances to the next match");
     await seriesContext.close();
 
-    for (const vp of [{ width: 740, height: 360 }, { width: 844, height: 390 }]) {
+    for (const vp of [{ width: 568, height: 320 }, { width: 740, height: 360 }, { width: 844, height: 390 }, { width: 932, height: 430 }]) {
       const pContext = await browser.newContext({ viewport: vp });
       const p = await pContext.newPage();
       await waitForGame(p, baseUrl);
@@ -184,6 +225,25 @@ async function run() {
       console.log(`PASS 9. Phone layout at ${vp.width}x${vp.height}`);
       await pContext.close();
     }
+
+    const desktopContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const desktopPage = await desktopContext.newPage();
+    await waitForGame(desktopPage, baseUrl);
+    const desktopShell = await desktopPage.evaluate(() => {
+      const stageRect = document.getElementById("stage").getBoundingClientRect();
+      const shellRect = document.getElementById("gameShell").getBoundingClientRect();
+      return {
+        stage: [stageRect.x, stageRect.y, stageRect.width, stageRect.height],
+        shell: [shellRect.x, shellRect.y, shellRect.width, shellRect.height],
+        footerDisplay: getComputedStyle(document.querySelector(".field-footer")).display,
+        overflow: document.documentElement.scrollWidth > innerWidth || document.documentElement.scrollHeight > innerHeight
+      };
+    });
+    if (JSON.stringify(desktopShell.stage) !== JSON.stringify([0, 0, 1440, 900]) || JSON.stringify(desktopShell.shell) !== JSON.stringify([0, 0, 1440, 900]) || desktopShell.footerDisplay !== "none" || desktopShell.overflow) {
+      throw new Error(`Desktop full-bleed contract failed: ${JSON.stringify(desktopShell)}`);
+    }
+    console.log("PASS 10. Desktop is a full-bleed game surface, not a centered webpage");
+    await desktopContext.close();
 
     if (errors.length) throw new Error(`Page errors: ${errors.join(" | ")}`);
     await context.close();
