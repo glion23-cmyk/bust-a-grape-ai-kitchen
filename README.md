@@ -37,6 +37,7 @@ This creates `dist/` with only the playable game, production art, mobile manifes
 The game has a two-model iteration rig with separate Git worktrees, alternating implementation turns, concise partner handoffs, validation between merges, and a bounded Claude allowance. See `collab/MANDATE.md` and `collab/PROTOCOL.md`.
 
 ```sh
+./scripts/auth-kitchen.sh
 ./scripts/kitchen-doctor.sh
 ./scripts/setup-kitchen.sh
 ./scripts/cook-round.sh 01

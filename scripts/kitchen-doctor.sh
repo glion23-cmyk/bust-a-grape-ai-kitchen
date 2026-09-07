@@ -20,7 +20,12 @@ fi
 printf '\nGemini CLI: '
 if command -v gemini >/dev/null 2>&1; then
   gemini --version
-  printf 'Gemini authentication is verified by the first headless cook call.\n'
+  if [ -n "${GEMINI_API_KEY:-}" ] || [ -n "${GOOGLE_GENAI_USE_VERTEXAI:-}" ] || [ -n "${GOOGLE_GENAI_USE_GCA:-}" ] || { [ -f /Users/vine/.gemini/settings.json ] && jq -e '.security.auth.selectedType' /Users/vine/.gemini/settings.json >/dev/null 2>&1; }; then
+    printf 'Gemini authentication: configured; live access is verified by the first cook call.\n'
+  else
+    printf 'Gemini authentication: REQUIRED (`gemini`, then choose Sign in with Google)\n'
+    failed=1
+  fi
 else
   printf 'missing\n'
   failed=1
