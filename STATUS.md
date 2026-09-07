@@ -28,6 +28,7 @@ This file is what the rebuilt playable slice actually has versus what a fuller 1
 | Hardened hosting bundle | `scripts/build-pages.sh`, `hosting/_headers`, `hosting/robots.txt` |
 | Public phone build | `https://bust-a-grape.pages.dev` |
 | Dimensional phone preview | `https://dimensional-round-02.bust-a-grape.pages.dev` |
+| Premium release candidate | `https://premium-shell.bust-a-grape.pages.dev` |
 | Claude + Gemini kitchen | `CLAUDE.md`, `GEMINI.md`, `collab/`, `scripts/cook-round.sh` |
 | Lot stats (4) | `content/lots.json` |
 | Announcer lines | `content/lines.json` |

@@ -2,6 +2,8 @@
 
 Branch: `fix/premium-shell`
 
+Hosted candidate: `https://premium-shell.bust-a-grape.pages.dev`
+
 ## What changed
 
 - Full-viewport landscape presentation on phone and desktop.

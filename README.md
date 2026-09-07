@@ -22,6 +22,10 @@ The current premium candidate is on `fix/premium-shell`. It is a full-viewport,
 phone-first baseline; the stable production alias is deliberately unchanged
 until a physical-phone review clears it.
 
+Play that exact candidate at:
+
+`https://premium-shell.bust-a-grape.pages.dev`
+
 For local development, with the Mac and phone on the same Wi-Fi, open the Mac's LAN address on the phone. For the current network that is:
 
 `http://192.168.40.126:4173/`
