@@ -14,7 +14,7 @@ This file is what the rebuilt playable slice actually has versus what a fuller 1
 - Pips are not Minions and not rats
 - Mouth: text, PG-13
 - Oneshot audio: synth SFX only
-- Delivery: mobile-first web/PWA. Engine is not locked; the current prototype is HTML + Canvas.
+- Delivery: mobile-first web/PWA. Current candidate is HTML + Three.js WebGL with a complete Canvas fallback.
 
 ## Have (in this folder)
 
@@ -27,6 +27,7 @@ This file is what the rebuilt playable slice actually has versus what a fuller 1
 | Mobile install/offline shell | `manifest.webmanifest`, `sw.js`, `art/gui/app-icon.svg`, `art/gui/apple-touch-icon.png` |
 | Hardened hosting bundle | `scripts/build-pages.sh`, `hosting/_headers`, `hosting/robots.txt` |
 | Public phone build | `https://bust-a-grape.pages.dev` |
+| Dimensional phone preview | `https://dimensional-round-02.bust-a-grape.pages.dev` |
 | Claude + Gemini kitchen | `CLAUDE.md`, `GEMINI.md`, `collab/`, `scripts/cook-round.sh` |
 | Lot stats (4) | `content/lots.json` |
 | Announcer lines | `content/lines.json` |
@@ -76,6 +77,13 @@ Do not build Sidewinder/Bootlegger at full blueprint scale.
 - Claude Opus 4.6 is the bounded creative-director/architecture/gate lane.
 - Gemini Pro High is the implementation, physics, tuning, testing, and mobile-performance lane.
 - The flat Canvas build stays runnable as the behavioral baseline until a thin dimensional slice beats it on aim readability, impact pleasure, and phone frame pacing.
+
+### Dimensional rounds now integrated
+
+- Round 01: true projectile depth, z-aware carts/terrain/splash, 3D dirt mesh, physical broadcast camera, Kansas launcher/Pip billboards, CUT control, and automatic Canvas degradation.
+- Round 02: Dead Lane/Graze/Wide depth grades, distinct four-lot impacts, 3/3/5/5-Pip launch tableaux, best-of-three Grudge Cards, and persistent local rivalry history.
+- Browser gates: exact 740×360 and 844×390 layouts, real NEXT MATCH pointer transition, reload persistence, forced Canvas fallback, seeded AI balance, and four tuned ammo impacts.
+- Hosted branch preview is deliberately separate from the stable public alias until physical iPhone/Android playtesting clears it.
 
 ## Need for oneshot 1.0 — not boards
 

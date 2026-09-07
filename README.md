@@ -14,7 +14,13 @@ Then open `http://127.0.0.1:4173`.
 
 ### Play on a phone
 
-With the Mac and phone on the same Wi-Fi, open the Mac's LAN address on the phone. For the current network that is:
+The current dimensional candidate is online at:
+
+`https://dimensional-round-02.bust-a-grape.pages.dev`
+
+Rotate the phone sideways. It is a Cloudflare branch preview, so it stays available when this Mac is asleep and does not replace the stable production build at `https://bust-a-grape.pages.dev`.
+
+For local development, with the Mac and phone on the same Wi-Fi, open the Mac's LAN address on the phone. For the current network that is:
 
 `http://192.168.40.126:4173/`
 
@@ -39,7 +45,7 @@ The game has a two-model iteration rig with separate Git worktrees. Claude Opus 
 ```sh
 ./scripts/kitchen-doctor.sh
 ./scripts/setup-kitchen.sh
-./scripts/cook-round.sh 01
+./scripts/cook-round.sh 03-next-seam
 ```
 
 Cook rounds do not publish by default. Set `BAG_DEPLOY_AFTER_COOK=1` only when an integrated round should replace the public build.
@@ -54,11 +60,12 @@ The first shot shows the full teaching arc. After that, the chalk only shows the
 ## Current slice
 
 - Compact Sidewinder twin-flywheel accelerator versus compact Bootlegger pressure-lariat thrower
-- Fixed-step ballistics and destructible chalk-dirt terrain
+- True `(x,y,z)` fixed-step ballistics, depth-local craters/splash, a 3D dirt stage, and Canvas degradation
+- CUT-driven Dead Lane/Graze/Wide skill tiers with distinct camera-framed impacts
 - Four mechanically distinct grape lots, including five-way Cluster breakup
-- Four readable Pip crew ceremonies
-- Ballistic-search AI with deliberate human error that tightens during a match
-- Contextual broadcast calls, hit streaks, match stats, and a fast rivalry rematch loop
+- Four readable 3D Pip crew tableaux using wheel-scale painted bunches
+- Ballistic-search AI with target-plane depth error derived from each solved shot
+- Contextual broadcast calls, hit streaks, match stats, opt-in best-of-three, and persistent local Grudge tally
 - Mouse, touch, and keyboard controls; phone-landscape layout
 
 The approved art direction and source boards live in `art/boards/`. `STATUS.md` is the accumulation index.
