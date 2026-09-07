@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="art/gui/app-icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="art/gui/apple-touch-icon.png" />
-  <link rel="stylesheet" href="style.css?v=7" />
+  <link rel="stylesheet" href="style.css?v=8" />
 </head>
 <body>
   <div id="gameShell" class="game-shell">
@@ -32,7 +32,7 @@
     </header>
 
     <main id="stage" class="stage">
-      <canvas id="c" width="1280" height="720" aria-label="Side-view artillery field. Drag from the field to aim, then release to fire."></canvas>
+      <canvas id="c" width="1280" height="720" aria-label="Dimensional artillery field. Pull back from the glowing Sidewinder launch handle, shape the shot, then release to fire."></canvas>
       <div class="stage-grain" aria-hidden="true"></div>
       <div class="stage-vignette" aria-hidden="true"></div>
 
@@ -58,20 +58,7 @@
           <div id="lateHp" class="bottle-rack" aria-label="Late health"></div>
         </article>
 
-        <div id="aimRail" class="aim-rail">
-          <div class="angle-readout">
-            <span>ANGLE</span>
-            <strong id="angleValue">50°</strong>
-          </div>
-          <div class="power-readout">
-            <div class="power-label"><span>JUICE</span><strong id="powerValue">50%</strong></div>
-            <div class="power-track"><i id="powerFill"></i></div>
-          </div>
-          <div class="cut-readout">
-            <div class="cut-label"><span>CUT</span><strong id="cutValue">0</strong></div>
-            <input type="range" id="cutSlider" class="cut-slider" min="-1" max="1" step="0.1" value="0" aria-label="Shot cut (depth spin)" />
-          </div>
-        </div>
+
       </section>
 
       <div id="protocolBanner" class="protocol-banner" hidden>
@@ -81,14 +68,14 @@
 
       <div id="fieldHint" class="field-hint" hidden>
         <strong>DRAG TO AIM</strong>
-        <span>Farther from your cart = more juice. Release to bust.</span>
+        <span>Grab the cyan launch ring. Pull back, shape the lane, release.</span>
       </div>
 
       <section id="titleScreen" class="screen title-screen">
         <div class="title-copy">
           <span class="league-stamp">KANSAS · BUGGY CLASS · LOT 12</span>
           <img src="art/gui/lockup.png" alt="Bust a Grape" />
-          <p>Two illegal harvest rigs. Six bottles. One chalk-dirt ditch.</p>
+          <p>Two illegal harvest rigs. Eight bottles. One county-line grudge.</p>
           <div class="button-row" style="display:flex; gap:16px; margin:24px 0 16px;">
             <button id="startButton" class="hero-button" type="button">SINGLE MATCH</button>
             <button id="startSeriesButton" class="hero-button" type="button">BEST-OF-3 SERIES</button>
@@ -117,7 +104,7 @@
       <div id="lots" class="lots"></div>
       <div class="control-copy">
         <strong id="controlHeadline">YOUR SHOT</strong>
-        <span id="controlHelp">Pick a lot. Drag anywhere on the field. Release to fire.</span>
+        <span id="controlHelp">Pick a lot. Grab the launch ring. Pull and release.</span>
       </div>
     </section>
 
@@ -145,7 +132,7 @@
   </aside>
 
   <script src="vendor/three.min.js"></script>
-  <script src="game.js?v=6"></script>
-  <script src="renderer3d.js?v=4"></script>
+  <script src="game.js?v=7"></script>
+  <script src="renderer3d.js?v=5"></script>
 </body>
 </html>

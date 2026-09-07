@@ -2,7 +2,6 @@
   "use strict";
 
   const canvas = document.getElementById("c");
-  const ctx = canvas.getContext("2d", { alpha: false });
   const W = canvas.width;
   const H = canvas.height;
   const GRAVITY = 620;
@@ -29,12 +28,6 @@
     lateHp: document.getElementById("lateHp"),
     lotChip: document.getElementById("lotChip"),
     turnChip: document.getElementById("turnChip"),
-    aimRail: document.getElementById("aimRail"),
-    angleValue: document.getElementById("angleValue"),
-    powerValue: document.getElementById("powerValue"),
-    powerFill: document.getElementById("powerFill"),
-    cutValue: document.getElementById("cutValue"),
-    cutSlider: document.getElementById("cutSlider"),
     protocolBanner: document.getElementById("protocolBanner"),
     protocolLabel: document.getElementById("protocolLabel"),
     protocolText: document.getElementById("protocolText"),
@@ -77,28 +70,28 @@
       id: "table", number: "01", name: "TABLE", fullName: "TABLE BERRY",
       note: "HONEST / MEDIUM", speed: 1, gravity: 1, radius: 8,
       direct: 1, splash: 1, splashRadius: 50, damageCap: 1,
-      craterRadius: 26, craterDepth: 15, shake: 7, ceremony: 0.82,
+      craterRadius: 26, craterDepth: 15, shake: 7, ceremony: 0.62,
       protocol: "WIPE · WEIGH · NOD · CLEAR THE LIP"
     },
     pea: {
       id: "pea", number: "02", name: "PEA", fullName: "PEA BERRY",
       note: "FAST / DIRECT", speed: 1.19, gravity: 0.92, radius: 4,
       direct: 2, splash: 0, splashRadius: 0, damageCap: 2,
-      craterRadius: 10, craterDepth: 5, shake: 3, ceremony: 0.9,
+      craterRadius: 10, craterDepth: 5, shake: 3, ceremony: 0.68,
       protocol: "CALIPERS · ARGUE · RE-MEASURE · SEND IT"
     },
     cluster: {
       id: "cluster", number: "03", name: "CLUSTER", fullName: "WHOLE CLUSTER",
       note: "SPLITS / CHAOS", speed: 0.94, gravity: 1, radius: 9,
       direct: 1, splash: 1, splashRadius: 34, damageCap: 2,
-      craterRadius: 18, craterDepth: 9, shake: 5, ceremony: 1.02,
+      craterRadius: 18, craterDepth: 9, shake: 5, ceremony: 0.82,
       protocol: "FIVE-PIP PILE-ON · COUNT STEMS · HEAVE"
     },
     lug: {
       id: "lug", number: "04", name: "LUG", fullName: "FULL LUG",
       note: "HEAVY / CRATER", speed: 0.8, gravity: 1.02, radius: 15,
       direct: 2, splash: 1, splashRadius: 116, damageCap: 2,
-      craterRadius: 82, craterDepth: 52, shake: 18, ceremony: 1.18,
+      craterRadius: 82, craterDepth: 52, shake: 18, ceremony: 0.96,
       protocol: "BLOCK-AND-TACKLE · MIND THE ROPE · CUT LOOSE"
     }
   };
@@ -174,25 +167,11 @@
     streak: ["Back-to-back stains. Somebody found the range.", "Two in a row. Now it feels personal."]
   };
 
-  const IMG = {};
-  const IMAGE_PATHS = {
-    sky: "art/sprites/kansas-dusk.jpg",
-    yard: "art/sprites/sidewinder.png",
-    late: "art/sprites/bootlegger.png",
-    pip: "art/sprites/pip-merlot.png"
-  };
-
-  const assetsReady = Promise.all(Object.entries(IMAGE_PATHS).map(([key, src]) => new Promise((resolve) => {
-    const image = new Image();
-    image.decoding = "async";
-    image.onload = () => resolve();
-    image.onerror = () => resolve();
-    image.src = src;
-    IMG[key] = image;
-  })));
-
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const lerp = (a, b, t) => a + (b - a) * t;
+  const haptic = (pattern) => {
+    try { navigator.vibrate?.(pattern); } catch (_) {}
+  };
   const easeOut = (t) => 1 - Math.pow(1 - clamp(t, 0, 1), 3);
   const easeInOut = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   const randomBetween = (min, max) => min + Math.random() * (max - min);
@@ -347,8 +326,8 @@
   }
 
   const carts = {
-    player: { id: "player", side: "YARD", machine: "SIDEWINDER", x: 222, z: 0, facing: 1, hp: 3, maxHp: 3 },
-    enemy: { id: "enemy", side: "LATE", machine: "BOOTLEGGER", x: 1058, z: 0, facing: -1, hp: 3, maxHp: 3 }
+    player: { id: "player", side: "YARD", machine: "SIDEWINDER", x: 222, z: 0, facing: 1, hp: 4, maxHp: 4 },
+    enemy: { id: "enemy", side: "LATE", machine: "BOOTLEGGER", x: 1058, z: 0, facing: -1, hp: 4, maxHp: 4 }
   };
 
   const state = {
@@ -360,6 +339,7 @@
     aimAngle: 50,
     aimPower: 50,
     aimCut: 0,
+    windSeed: 12345,
     aimMemory: freshAimMemory(),
     craters: [],
     dragging: false,
@@ -448,7 +428,7 @@
 
   function renderBottles(container, hp, label) {
     container.replaceChildren();
-    for (let i = 0; i < 3; i += 1) {
+    for (let i = 0; i < 4; i += 1) {
       const bottle = document.createElement("i");
       const fill = clamp(hp - i, 0, 1);
       bottle.className = `bottle${fill <= 0 ? " empty" : fill < 1 ? " partial" : ""}`;
@@ -456,7 +436,13 @@
       bottle.setAttribute("aria-hidden", "true");
       container.appendChild(bottle);
     }
-    container.setAttribute("aria-label", `${label}: ${Math.max(0, hp).toFixed(1)} of 3 bottles`);
+    container.setAttribute("aria-label", `${label}: ${Math.max(0, hp).toFixed(1)} of 4 bottles`);
+  }
+
+  function windReadout() {
+    const wind = (state.windSeed / 4294967296) * 30 - 15;
+    if (Math.abs(wind) < 1.5) return "WIND CALM";
+    return `WIND ${wind < 0 ? "←" : "→"} ${Math.round(Math.abs(wind))}`;
   }
 
   function updateHud() {
@@ -464,20 +450,16 @@
     const playerCanAim = state.mode === "match" && state.turn === "player" && state.phase === "aim";
     DOM.yardCard.classList.toggle("active", state.mode === "match" && state.turn === "player");
     DOM.lateCard.classList.toggle("active", state.mode === "match" && state.turn === "enemy");
-    DOM.aimRail.classList.toggle("disabled", !playerCanAim);
-    DOM.angleValue.textContent = `${Math.round(state.aimAngle)}°`;
-    DOM.powerValue.textContent = `${Math.round(state.aimPower)}%`;
-    DOM.powerFill.style.width = `${state.aimPower}%`;
-    DOM.cutValue.textContent = state.aimCut.toFixed(1);
-    DOM.cutSlider.value = state.aimCut;
     DOM.lotChip.textContent = `LOT ${lot.number}`;
     DOM.selectedLotName.textContent = lot.fullName;
     DOM.turnChip.textContent = state.turn === "player" ? "PIPS ON THE LIP" : "LATE AT THE LINE";
-    DOM.controlHeadline.textContent = state.mode === "result" ? "MATCH RULED" : playerCanAim ? "YOUR SHOT" : state.phase === "ceremony" ? "CEREMONY ACTIVE" : state.turn === "enemy" ? "LATE SHOOTING" : "FIELD LIVE";
+    DOM.controlHeadline.textContent = state.mode === "result" ? "MATCH RULED" : playerCanAim && state.dragging ? `JUICE ${Math.round(state.aimPower)}%` : playerCanAim ? "YOUR SHOT" : state.phase === "ceremony" ? "CEREMONY ACTIVE" : state.turn === "enemy" ? "LATE SHOOTING" : "FIELD LIVE";
     DOM.controlHelp.textContent = state.mode === "result"
       ? "Run it back. The rivalry remembers."
       : playerCanAim
-        ? state.stats?.shots > 0 ? "The chalk shows the climb. Old stains remember the range." : "Pick a lot. Drag anywhere on the field. Release to fire."
+        ? state.dragging
+          ? `${Math.round(state.aimAngle)}° LIFT · ${Math.abs(state.aimCut) < 0.12 ? "STRAIGHT LANE" : `${state.aimCut < 0 ? "LEFT" : "RIGHT"} HOOK ${Math.round(Math.abs(state.aimCut) * 100)}`}`
+          : `${windReadout()} · ${state.stats?.shots > 0 ? "THE CHALK REMEMBERS" : "GRAB THE CYAN RING"}`
         : state.mode === "title" ? "Enter the ditch to begin." : "Hands clear while the lot is moving.";
     renderBottles(DOM.yardHp, carts.player.hp, "Yard health");
     renderBottles(DOM.lateHp, carts.enemy.hp, "Late health");
@@ -529,6 +511,7 @@
     state.aimAngle = 50;
     state.aimPower = 50;
     state.aimCut = 0;
+    state.windSeed = Math.floor(Math.random() * 4294967296);
     state.aimMemory = freshAimMemory();
     state.dragging = false;
     state.pointerId = null;
@@ -559,7 +542,7 @@
     DOM.worldHud.hidden = false;
     DOM.protocolBanner.hidden = true;
     DOM.fieldHint.hidden = false;
-    DOM.fieldStatus.textContent = `THE DITCH / MATCH ${String(state.matchNumber).padStart(2, "0")} / WIND CALM`;
+    DOM.fieldStatus.textContent = `THE DITCH / MATCH ${String(state.matchNumber).padStart(2, "0")} / ${windReadout()}`;
     updateHud();
   }
 
@@ -653,8 +636,8 @@
   function muzzleFor(cart) {
     const ground = groundAt(cart.x);
     return cart.id === "player"
-      ? { x: cart.x + 135, y: ground - 67 }
-      : { x: cart.x - 118, y: ground - 111 };
+      ? { x: cart.x + 105, y: ground - 96 }
+      : { x: cart.x - 138, y: ground - 174 };
   }
 
   function velocityFor(cart, lot, angle, power, cut = 0) {
@@ -679,6 +662,7 @@
       angle: clamp(angle, 18, 82),
       power: clamp(power, 18, 100),
       cut: clamp(cut, -1, 1),
+      seed: state.windSeed,
       elapsed: 0,
       duration: lot.ceremony
     };
@@ -733,6 +717,7 @@
     state.resolveTimer = -1;
     DOM.protocolBanner.hidden = true;
     sound.play("launch", lot.id);
+    haptic(lot.id === "lug" ? [16, 16, 28] : 12);
     if (Math.random() < 0.74) say("fire");
     burstAt(muzzle.x, muzzle.y, lot.id === "lug" ? 13 : 7, "smoke");
     updateHud();
@@ -844,50 +829,145 @@
     };
   }
 
-  function updateAimFromPoint(point) {
+  const gestureHistory = [];
+
+  function getCurvature() {
+    if (gestureHistory.length < 3) return 0;
+    let sumCurve = 0;
+    let validPairs = 0;
+    for (let i = 0; i < gestureHistory.length - 2; i++) {
+      const p1 = gestureHistory[i];
+      const p2 = gestureHistory[i + 1];
+      const p3 = gestureHistory[i + 2];
+      const v1x = p2.x - p1.x;
+      const v1y = p2.y - p1.y;
+      const v2x = p3.x - p2.x;
+      const v2y = p3.y - p2.y;
+      const cross = v1x * v2y - v1y * v2x;
+      const len1 = Math.hypot(v1x, v1y);
+      const len2 = Math.hypot(v2x, v2y);
+      if (len1 * len2 > 0) {
+        sumCurve += cross / (len1 * len2);
+        validPairs++;
+      }
+    }
+    if (validPairs === 0) return 0;
+    const avgCross = sumCurve / validPairs;
     const cart = carts.player;
-    const muzzle = muzzleFor(cart);
-    const forward = Math.max(14, (point.x - muzzle.x) * cart.facing);
-    const rise = muzzle.y - point.y;
-    state.aimAngle = clamp(Math.atan2(rise, forward) * 180 / Math.PI, 18, 82);
-    state.aimPower = clamp(Math.hypot(forward, rise) / 4.15, 18, 100);
-    updateHud();
+    return clamp(avgCross * 2.5 * cart.facing, -1, 1);
+  }
+
+  function handleCancel(event) {
+    if (!state.dragging || (event && event.pointerId && event.pointerId !== state.pointerId)) return;
+    state.dragging = false;
+    state.pointerId = null;
+    if (window.__BAG__.gestureState) {
+      window.__BAG__.gestureState.state = "idle";
+      window.__BAG__.gestureState.valid = false;
+    }
   }
 
   canvas.addEventListener("pointerdown", (event) => {
     if (state.mode !== "match" || state.turn !== "player" || state.phase !== "aim") return;
+    if (!window.__BAG__.getGrabRect) return;
+    const rect = window.__BAG__.getGrabRect("player");
+    if (!rect) return;
+
+    if (event.clientX < rect.left || event.clientX > rect.right ||
+        event.clientY < rect.top || event.clientY > rect.bottom) {
+      return;
+    }
+
     event.preventDefault();
     sound.wake();
     state.dragging = true;
     state.pointerId = event.pointerId;
     state.firstAim = false;
     DOM.fieldHint.hidden = true;
-    try { canvas.setPointerCapture(event.pointerId); } catch (_) { /* capture is optional */ }
-    updateAimFromPoint(canvasPoint(event));
+    try { canvas.setPointerCapture(event.pointerId); } catch (_) {}
+
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+
+    window.__BAG__.gestureState.state = "deadzone";
+    window.__BAG__.gestureState.origin = { x: cx, y: cy };
+    window.__BAG__.gestureState.current = { x: event.clientX, y: event.clientY };
+    window.__BAG__.gestureState.valid = false;
+
+    gestureHistory.length = 0;
+    gestureHistory.push({ x: event.clientX, y: event.clientY });
   });
 
   canvas.addEventListener("pointermove", (event) => {
     if (!state.dragging || event.pointerId !== state.pointerId) return;
     event.preventDefault();
-    updateAimFromPoint(canvasPoint(event));
+
+    const pt = { x: event.clientX, y: event.clientY };
+    window.__BAG__.gestureState.current = pt;
+
+    const origin = window.__BAG__.gestureState.origin;
+    const pullPx = Math.hypot(pt.x - origin.x, pt.y - origin.y);
+
+    if (pullPx >= 28) {
+      const crossedDeadzone = !window.__BAG__.gestureState.valid;
+      window.__BAG__.gestureState.state = "active";
+      window.__BAG__.gestureState.valid = true;
+      if (crossedDeadzone) haptic(8);
+
+      const pullDirX = origin.x - pt.x;
+      const pullDirY = origin.y - pt.y;
+      const len = Math.hypot(pullDirX, pullDirY);
+
+      const cart = carts.player;
+      let pitch = 45;
+      if (len > 0) {
+        const nx = pullDirX / len;
+        const ny = pullDirY / len;
+        pitch = Math.atan2(-ny, nx * cart.facing) * 180 / Math.PI;
+      }
+
+      state.aimAngle = clamp(pitch, 18, 82);
+      const maxPullPx = clamp(Math.min(canvas.clientWidth * 0.28, canvas.clientHeight * 0.5), 150, 220);
+      const pullT = clamp((pullPx - 28) / (maxPullPx - 28), 0, 1);
+      state.aimPower = 18 + pullT * 82;
+
+      const last = gestureHistory[gestureHistory.length - 1];
+      if (Math.hypot(pt.x - last.x, pt.y - last.y) >= 6) {
+        gestureHistory.push(pt);
+        if (gestureHistory.length > 8) gestureHistory.shift();
+      }
+
+      state.aimCut = getCurvature();
+      updateHud();
+    } else {
+      window.__BAG__.gestureState.state = "deadzone";
+      window.__BAG__.gestureState.valid = false;
+    }
   });
 
   function releasePointer(event) {
     if (!state.dragging || event.pointerId !== state.pointerId) return;
     event.preventDefault();
-    updateAimFromPoint(canvasPoint(event));
-    state.dragging = false;
-    state.pointerId = null;
-    beginShot("player", state.selected, state.aimAngle, state.aimPower, state.aimCut);
+
+    const valid = window.__BAG__.gestureState.valid;
+    handleCancel(event);
+
+    if (valid) {
+      beginShot("player", state.selected, state.aimAngle, state.aimPower, state.aimCut);
+    }
   }
 
   canvas.addEventListener("pointerup", releasePointer);
-  canvas.addEventListener("pointercancel", (event) => {
-    if (event.pointerId === state.pointerId) {
-      state.dragging = false;
-      state.pointerId = null;
-    }
+  canvas.addEventListener("pointercancel", handleCancel);
+  canvas.addEventListener("lostpointercapture", handleCancel);
+  window.addEventListener("orientationchange", handleCancel);
+  if(document.addEventListener) document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") handleCancel();
   });
+
+  canvas.addEventListener("touchstart", (event) => {
+    if (event.touches.length > 1) handleCancel();
+  }, { passive: true });
 
   window.addEventListener("keydown", (event) => {
     if (state.mode === "title" && (event.code === "Space" || event.code === "Enter")) {
@@ -936,10 +1016,6 @@
 
   buildLotButtons();
   DOM.worldHud.hidden = true;
-  DOM.cutSlider.addEventListener("input", (event) => {
-    state.aimCut = parseFloat(event.target.value);
-    DOM.cutValue.textContent = state.aimCut.toFixed(1);
-  });
   DOM.soundToggle.setAttribute("aria-pressed", "true");
   updateHud();
 
@@ -1071,6 +1147,7 @@
     const isFirstHit = state.volley && !state.volley.ceremonyPlayed;
     if (isFirstHit) {
       if (state.volley) state.volley.ceremonyPlayed = true;
+      haptic(lot.id === "lug" ? [24, 18, 42] : lot.id === "cluster" ? [14, 12, 14] : 16);
       state.impactFocus = {
         x: impactX,
         y: impactY,
@@ -1174,6 +1251,8 @@
     for (const projectile of state.projectiles) {
       const lot = LOTS[projectile.lotId];
       projectile.age += dt;
+            const wind = (state.ceremony ? state.ceremony.seed : state.windSeed) / 4294967296 * 30 - 15;
+      projectile.vx += wind * dt;
       projectile.vy += GRAVITY * lot.gravity * dt;
       projectile.x += projectile.vx * dt;
       projectile.y += projectile.vy * dt;
@@ -1268,12 +1347,14 @@
     } else {
       state.turn = "player";
       state.phase = "aim";
+      state.windSeed = Math.floor(Math.random() * 4294967296);
       state.selected = state.playerSelected || "table";
       const remembered = state.aimMemory[state.selected];
       state.aimAngle = remembered.angle;
       state.aimPower = remembered.power;
       state.aimCut = remembered.cut;
       DOM.fieldHint.hidden = true;
+      DOM.fieldStatus.textContent = `THE DITCH / MATCH ${String(state.matchNumber).padStart(2, "0")} / ${windReadout()}`;
     }
     updateHud();
   }
@@ -1332,741 +1413,6 @@
     }
   }
 
-  function drawSky() {
-    if (IMG.sky?.complete && IMG.sky.naturalWidth) {
-      ctx.drawImage(IMG.sky, 0, 0, IMG.sky.naturalWidth, IMG.sky.naturalHeight * 0.61, 0, 0, W, 535);
-    } else {
-      const gradient = ctx.createLinearGradient(0, 0, 0, 535);
-      gradient.addColorStop(0, COLORS.sky);
-      gradient.addColorStop(1, COLORS.horizon);
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, W, 535);
-    }
-
-    const wash = ctx.createLinearGradient(0, 0, 0, 520);
-    wash.addColorStop(0, "rgba(26,16,12,0.08)");
-    wash.addColorStop(0.62, "rgba(90,22,56,0.04)");
-    wash.addColorStop(1, "rgba(58,42,28,0.32)");
-    ctx.fillStyle = wash;
-    ctx.fillRect(0, 0, W, 540);
-
-    ctx.save();
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = COLORS.dirt;
-    ctx.beginPath();
-    ctx.moveTo(0, 453);
-    for (let x = 0; x <= W; x += 24) {
-      const y = 450 + Math.sin(x * 0.025) * 4 + Math.sin(x * 0.071) * 2;
-      ctx.lineTo(x, y);
-    }
-    ctx.lineTo(W, H);
-    ctx.lineTo(0, H);
-    ctx.closePath();
-    ctx.fill();
-
-    // A spare Kansas windmill and utility line keep the field rural, not sci-fi.
-    ctx.strokeStyle = COLORS.ink;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(750, 454);
-    ctx.lineTo(764, 369);
-    ctx.lineTo(778, 454);
-    ctx.moveTo(746, 407);
-    ctx.lineTo(781, 407);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(764, 369, 20, 0, Math.PI * 2);
-    ctx.stroke();
-    for (let i = 0; i < 8; i += 1) {
-      const angle = i * Math.PI / 4 + state.elapsed * 0.03;
-      ctx.beginPath();
-      ctx.moveTo(764, 369);
-      ctx.lineTo(764 + Math.cos(angle) * 20, 369 + Math.sin(angle) * 20);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  function terrainPath() {
-    ctx.beginPath();
-    ctx.moveTo(0, terrain[0]);
-    for (let i = 1; i < COLS; i += 1) ctx.lineTo(i * CELL, terrain[i]);
-    ctx.lineTo(W, H);
-    ctx.lineTo(0, H);
-    ctx.closePath();
-  }
-
-  function drawTerrain() {
-    terrainPath();
-    const fill = ctx.createLinearGradient(0, 430, 0, H);
-    fill.addColorStop(0, COLORS.dirt);
-    fill.addColorStop(0.38, COLORS.dirt);
-    fill.addColorStop(1, COLORS.ink);
-    ctx.fillStyle = fill;
-    ctx.fill();
-
-    ctx.save();
-    terrainPath();
-    ctx.clip();
-    ctx.strokeStyle = "rgba(243,230,200,0.075)";
-    ctx.lineWidth = 1;
-    for (let band = 0; band < 6; band += 1) {
-      ctx.beginPath();
-      for (let x = 0; x <= W; x += 12) {
-        const y = 536 + band * 34 + Math.sin(x * 0.018 + band) * 7;
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    }
-    terrainMarks.forEach((mark) => {
-      const y = groundAt(mark.x) + mark.inset;
-      ctx.strokeStyle = `rgba(243,230,200,${mark.alpha})`;
-      ctx.beginPath();
-      ctx.moveTo(mark.x, y);
-      ctx.lineTo(mark.x + mark.length, y + mark.tilt);
-      ctx.stroke();
-    });
-    ctx.restore();
-
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = COLORS.ink;
-    ctx.lineWidth = 8;
-    ctx.beginPath();
-    for (let i = 0; i < COLS; i += 1) {
-      if (i === 0) ctx.moveTo(0, terrain[i]);
-      else ctx.lineTo(i * CELL, terrain[i]);
-    }
-    ctx.stroke();
-    ctx.strokeStyle = COLORS.horizon;
-    ctx.globalAlpha = 0.38;
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-  }
-
-  function drawStains() {
-    ctx.save();
-    state.stains.forEach((stain) => {
-      const y = groundAt(stain.x) + 2;
-      ctx.save();
-      ctx.translate(stain.x, y);
-      ctx.rotate(stain.rotation);
-      ctx.fillStyle = stain.lotId === "pea" ? COLORS.oxblood : COLORS.juice;
-      ctx.globalAlpha = 0.82;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, stain.rx, stain.ry, 0, 0, Math.PI * 2);
-      ctx.fill();
-      stain.satellites.forEach((drop) => {
-        ctx.beginPath();
-        ctx.arc(drop.x * stain.rx, drop.y * stain.ry, drop.radius, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      ctx.restore();
-    });
-    ctx.restore();
-  }
-
-  function drawFieldSign() {
-    const x = 642;
-    const y = groundAt(x) - 91;
-    ctx.save();
-    ctx.globalAlpha = 0.78;
-    ctx.strokeStyle = COLORS.ink;
-    ctx.fillStyle = COLORS.dirt;
-    ctx.lineWidth = 5;
-    ctx.fillRect(x - 87, y, 174, 43);
-    ctx.strokeRect(x - 87, y, 174, 43);
-    ctx.strokeStyle = COLORS.copper;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(x - 80, y + 6, 160, 31);
-    ctx.fillStyle = COLORS.cream;
-    ctx.textAlign = "center";
-    ctx.font = "900 13px Impact, sans-serif";
-    ctx.fillText("NIGHT HARVEST LEAGUE", x, y + 20);
-    ctx.font = "700 8px Arial Narrow, sans-serif";
-    ctx.fillStyle = COLORS.horizon;
-    ctx.fillText("PROPERTY LINE / NO CLEAN HANDS", x, y + 32);
-    ctx.strokeStyle = COLORS.ink;
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.moveTo(x - 65, y + 43);
-    ctx.lineTo(x - 58, groundAt(x - 58) + 2);
-    ctx.moveTo(x + 65, y + 43);
-    ctx.lineTo(x + 58, groundAt(x + 58) + 2);
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  function drawFallbackCart(cart, ground) {
-    ctx.fillStyle = cart.id === "player" ? COLORS.oxblood : COLORS.dirt;
-    ctx.strokeStyle = COLORS.ink;
-    ctx.lineWidth = 6;
-    ctx.fillRect(cart.x - 115, ground - 95, 230, 65);
-    ctx.strokeRect(cart.x - 115, ground - 95, 230, 65);
-    for (const wheelX of [cart.x - 72, cart.x + 75]) {
-      ctx.beginPath();
-      ctx.arc(wheelX, ground - 19, 27, 0, Math.PI * 2);
-      ctx.fillStyle = COLORS.ink;
-      ctx.fill();
-      ctx.strokeStyle = COLORS.copper;
-      ctx.lineWidth = 5;
-      ctx.stroke();
-    }
-  }
-
-  function drawCartMechanism(cart, ground, activity) {
-    ctx.save();
-    ctx.lineCap = "round";
-    if (cart.id === "player") {
-      const spin = state.elapsed * (activity ? 8.5 : 0.8);
-      const centerX = cart.x + 54;
-      [ground - 99, ground - 65].forEach((centerY, index) => {
-        ctx.strokeStyle = COLORS.ink;
-        ctx.lineWidth = 7;
-        ctx.beginPath();
-        ctx.arc(centerX + index * 4, centerY, 21, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.strokeStyle = COLORS.juice;
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(centerX + index * 4, centerY, 17, spin + index, spin + index + Math.PI * 1.28);
-        ctx.stroke();
-        ctx.strokeStyle = COLORS.copper;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(centerX + Math.cos(spin) * 5, centerY + Math.sin(spin) * 5);
-        ctx.lineTo(centerX + Math.cos(spin) * 16, centerY + Math.sin(spin) * 16);
-        ctx.stroke();
-      });
-      ctx.strokeStyle = COLORS.copper;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(centerX + 8, ground - 84);
-      ctx.lineTo(cart.x + 132, ground - 67);
-      ctx.stroke();
-    } else {
-      const pivotX = cart.x - 11;
-      const pivotY = ground - 112;
-      const muzzle = muzzleFor(cart);
-      ctx.strokeStyle = COLORS.ink;
-      ctx.lineWidth = 7;
-      ctx.beginPath();
-      ctx.moveTo(cart.x + 36, ground - 91);
-      ctx.lineTo(pivotX, pivotY);
-      ctx.lineTo(muzzle.x, muzzle.y);
-      ctx.stroke();
-      ctx.strokeStyle = COLORS.copper;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(pivotX, pivotY);
-      ctx.quadraticCurveTo(cart.x - 62, ground - 142 - (activity ? Math.sin(state.elapsed * 12) * 5 : 0), muzzle.x, muzzle.y);
-      ctx.stroke();
-      ctx.fillStyle = COLORS.juice;
-      ctx.strokeStyle = COLORS.cream;
-      ctx.lineWidth = 2;
-      ctx.fillRect(cart.x + 14, ground - 119, 9, 47);
-      ctx.strokeRect(cart.x + 14, ground - 119, 9, 47);
-      ctx.fillStyle = COLORS.cream;
-      ctx.fillRect(cart.x + 16, ground - 77 - (activity ? 30 : 14), 5, activity ? 30 : 14);
-    }
-    ctx.restore();
-  }
-
-  function drawCart(cart) {
-    const ground = groundAt(cart.x);
-    const activity = state.mode === "match" && state.turn === cart.id && (state.phase === "ceremony" || state.phase === "flight");
-    ctx.save();
-    ctx.globalAlpha = cart.hp <= 0 ? 0.72 : 1;
-    ctx.fillStyle = "rgba(26,16,12,0.55)";
-    ctx.beginPath();
-    ctx.ellipse(cart.x, ground + 2, cart.id === "player" ? 150 : 137, 17, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    const image = cart.id === "player" ? IMG.yard : IMG.late;
-    if (image?.complete && image.naturalWidth) {
-      const width = cart.id === "player" ? 316 : 292;
-      const height = width * image.naturalHeight / image.naturalWidth;
-      const recoil = activity && state.phase === "flight" ? -cart.facing * Math.max(0, 7 - state.projectiles[0]?.age * 45) : 0;
-      ctx.drawImage(image, cart.x - width / 2 + recoil, ground - height + 8, width, height);
-    } else {
-      drawFallbackCart(cart, ground);
-    }
-    drawCartMechanism(cart, ground, activity);
-
-    if (cart.hp < cart.maxHp) {
-      const smokeCount = cart.hp === 1 ? 3 : 1;
-      for (let i = 0; i < smokeCount; i += 1) {
-        const phase = (state.elapsed * (0.55 + i * 0.08) + i * 0.31) % 1;
-        ctx.fillStyle = `rgba(26,16,12,${0.35 * (1 - phase)})`;
-        ctx.beginPath();
-        ctx.arc(cart.x + (i - 1) * 11, ground - 122 - phase * 55, 8 + phase * 15, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-    ctx.restore();
-  }
-
-  function drawFallbackPip(x, y, scale = 1, flip = false, rotation = 0) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(rotation);
-    ctx.scale(flip ? -scale : scale, scale);
-    ctx.strokeStyle = COLORS.ink;
-    ctx.lineWidth = 3;
-    ctx.fillStyle = COLORS.juice;
-    [[0, -45], [-11, -36], [11, -36], [-17, -24], [0, -25], [17, -24], [-9, -12], [9, -12]].forEach(([bx, by]) => {
-      ctx.beginPath();
-      ctx.arc(bx, by, 10, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-    });
-    ctx.beginPath();
-    ctx.moveTo(0, -54);
-    ctx.lineTo(7, -64);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(-14, -26);
-    ctx.lineTo(-25, -15);
-    ctx.moveTo(14, -26);
-    ctx.lineTo(25, -15);
-    ctx.moveTo(-7, -5);
-    ctx.lineTo(-10, 5);
-    ctx.moveTo(7, -5);
-    ctx.lineTo(10, 5);
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  function drawPip(x, ground, scale = 1, flip = false, rotation = 0, alpha = 1) {
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = "rgba(26,16,12,0.46)";
-    ctx.beginPath();
-    ctx.ellipse(x, ground + 1, 19 * scale, 5 * scale, 0, 0, Math.PI * 2);
-    ctx.fill();
-    const image = IMG.pip;
-    if (image?.complete && image.naturalWidth) {
-      const height = 94 * scale;
-      const width = height * image.naturalWidth / image.naturalHeight;
-      ctx.translate(x, ground + 3);
-      ctx.rotate(rotation);
-      ctx.scale(flip ? -1 : 1, 1);
-      ctx.drawImage(image, -width / 2, -height, width, height);
-    } else {
-      drawFallbackPip(x, ground, scale, flip, rotation);
-    }
-    ctx.restore();
-  }
-
-  function drawIdleCrew() {
-    const activeCeremony = state.ceremony?.shooterId;
-    const bob = Math.sin(state.elapsed * 2.1) * 1.2;
-    if (activeCeremony !== "player") {
-      drawPip(63, groundAt(63) + bob, 0.94, false, -0.015);
-      drawPip(397, groundAt(397) - bob, 0.9, true, 0.02);
-    }
-    if (activeCeremony !== "enemy") {
-      drawPip(886, groundAt(886) - bob, 0.9, false, -0.02);
-      drawPip(1217, groundAt(1217) + bob, 0.94, true, 0.015);
-    }
-  }
-
-  function drawBerry(x, y, radius = 8, pea = false) {
-    ctx.fillStyle = pea ? COLORS.dirt : COLORS.juice;
-    ctx.strokeStyle = COLORS.cream;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    ctx.strokeStyle = COLORS.ink;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(x, y - radius);
-    ctx.lineTo(x + 3, y - radius - 6);
-    ctx.stroke();
-  }
-
-  function drawScale(x, ground, facing) {
-    ctx.save();
-    ctx.strokeStyle = COLORS.cream;
-    ctx.fillStyle = COLORS.dirt;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(x, ground - 6);
-    ctx.lineTo(x, ground - 43);
-    ctx.moveTo(x - 30, ground - 35);
-    ctx.lineTo(x + 30, ground - 35);
-    ctx.moveTo(x - 25, ground - 35);
-    ctx.lineTo(x - 31, ground - 18);
-    ctx.moveTo(x + 25, ground - 35);
-    ctx.lineTo(x + 31, ground - 18);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.ellipse(x - 31, ground - 15, 17, 5, 0, 0, Math.PI * 2);
-    ctx.ellipse(x + 31, ground - 15, 17, 5, 0, 0, Math.PI * 2);
-    ctx.stroke();
-    drawBerry(x + facing * 31, ground - 24, 7);
-    ctx.restore();
-  }
-
-  function drawCrate(x, y, rotation = 0, scale = 1) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(rotation);
-    ctx.scale(scale, scale);
-    ctx.fillStyle = COLORS.dirt;
-    ctx.strokeStyle = COLORS.cream;
-    ctx.lineWidth = 3;
-    ctx.fillRect(-28, -20, 56, 40);
-    ctx.strokeRect(-28, -20, 56, 40);
-    ctx.strokeStyle = COLORS.copper;
-    ctx.beginPath();
-    ctx.moveTo(-25, -16);
-    ctx.lineTo(25, 16);
-    ctx.moveTo(25, -16);
-    ctx.lineTo(-25, 16);
-    ctx.stroke();
-    ctx.fillStyle = COLORS.juice;
-    for (let row = 0; row < 2; row += 1) {
-      for (let column = 0; column < 4; column += 1) {
-        ctx.beginPath();
-        ctx.arc(-16 + column * 11, -7 + row * 13, 5, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-    ctx.restore();
-  }
-
-  function drawCeremony() {
-    const ceremony = state.ceremony;
-    if (!ceremony) return;
-    const cart = carts[ceremony.shooterId];
-    const facing = cart.facing;
-    const progress = clamp(ceremony.elapsed / ceremony.duration, 0, 1);
-    const motion = easeInOut(progress);
-    const front = cart.x + facing * 160;
-    const frontGround = groundAt(front);
-
-    if (ceremony.lotId === "table") {
-      const scaleX = front - facing * 8;
-      drawScale(scaleX, groundAt(scaleX), facing);
-      drawPip(front - facing * 63, groundAt(front - facing * 63), 0.91, facing < 0, Math.sin(progress * Math.PI * 4) * 0.025);
-      drawPip(front + facing * 58, groundAt(front + facing * 58), 0.88, facing > 0, -0.03);
-      drawPip(front - facing * 108, groundAt(front - facing * 108), 0.83, facing < 0, 0.04);
-      ctx.save();
-      ctx.strokeStyle = COLORS.cream;
-      ctx.globalAlpha = 0.8;
-      ctx.lineWidth = 5;
-      ctx.beginPath();
-      const wipeX = scaleX + facing * (14 + Math.sin(progress * Math.PI * 6) * 15);
-      ctx.moveTo(wipeX, frontGround - 37);
-      ctx.lineTo(wipeX + facing * 15, frontGround - 24);
-      ctx.stroke();
-      ctx.restore();
-    } else if (ceremony.lotId === "pea") {
-      const peaX = front;
-      const peaY = frontGround - 41;
-      drawPip(front - facing * 45, groundAt(front - facing * 45), 0.92, facing < 0, -0.05);
-      drawPip(front + facing * 48, groundAt(front + facing * 48), 0.92, facing > 0, 0.05);
-      drawPip(front - facing * 94, groundAt(front - facing * 94), 0.8, facing < 0, Math.sin(progress * 16) * 0.08);
-      drawBerry(peaX, peaY, 5, true);
-      const caliperGap = 11 + Math.sin(progress * Math.PI * 6) * 3;
-      ctx.save();
-      ctx.strokeStyle = COLORS.cream;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(peaX - caliperGap, peaY - 16);
-      ctx.lineTo(peaX - caliperGap, peaY + 13);
-      ctx.lineTo(peaX - 4, peaY + 13);
-      ctx.moveTo(peaX + caliperGap, peaY - 16);
-      ctx.lineTo(peaX + caliperGap, peaY + 13);
-      ctx.lineTo(peaX + 4, peaY + 13);
-      ctx.moveTo(peaX - caliperGap, peaY - 13);
-      ctx.lineTo(peaX + caliperGap, peaY - 13);
-      ctx.stroke();
-      ctx.restore();
-    } else if (ceremony.lotId === "cluster") {
-      const pileX = front - facing * 8;
-      for (let i = 0; i < 5; i += 1) {
-        const startX = cart.x - facing * (155 - i * 36);
-        const column = i % 2;
-        const row = Math.floor(i / 2);
-        const targetX = pileX + facing * (column ? 13 : -13);
-        const targetGround = groundAt(pileX) - row * 39 - (column ? 7 : 0);
-        const x = lerp(startX, targetX, motion);
-        const y = lerp(groundAt(startX), targetGround, motion);
-        drawPip(x, y, 0.84, (i % 2 === 0) === (facing < 0), (i - 2) * 0.035 * motion);
-      }
-      ctx.save();
-      ctx.globalAlpha = progress;
-      for (let i = 0; i < 7; i += 1) {
-        const angle = i / 7 * Math.PI * 2;
-        drawBerry(pileX + Math.cos(angle) * 15, groundAt(pileX) - 82 + Math.sin(angle) * 12, 7);
-      }
-      ctx.restore();
-    } else {
-      const pulleyX = cart.x + facing * 92;
-      const pulleyY = groundAt(pulleyX) - 179;
-      const crateX = front;
-      const crateGround = groundAt(crateX);
-      const crateY = lerp(crateGround - 23, crateGround - 92, easeOut(progress));
-      ctx.save();
-      ctx.strokeStyle = COLORS.ink;
-      ctx.lineWidth = 7;
-      ctx.beginPath();
-      ctx.moveTo(cart.x - facing * 12, groundAt(cart.x) - 112);
-      ctx.lineTo(pulleyX, pulleyY);
-      ctx.lineTo(crateX, crateY - 25);
-      ctx.stroke();
-      ctx.strokeStyle = COLORS.cream;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(pulleyX, pulleyY, 16, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(crateX, crateY - 25);
-      ctx.lineTo(crateX - 18, crateY - 5);
-      ctx.moveTo(crateX, crateY - 25);
-      ctx.lineTo(crateX + 18, crateY - 5);
-      ctx.stroke();
-      ctx.restore();
-      drawCrate(crateX, crateY, Math.sin(progress * 9) * 0.035, 0.9);
-      for (let i = 0; i < 4; i += 1) {
-        const pipX = cart.x - facing * (95 + i * 42) + facing * Math.sin(progress * 11 + i) * 4;
-        drawPip(pipX, groundAt(pipX), 0.83, facing > 0, -facing * 0.09);
-      }
-    }
-  }
-
-  function drawProjectileShape(projectile) {
-    const lot = LOTS[projectile.lotId];
-    ctx.save();
-    ctx.translate(projectile.x, projectile.y);
-    ctx.rotate(projectile.rotation);
-    ctx.strokeStyle = COLORS.ink;
-    ctx.lineWidth = 2.5;
-
-    if (projectile.lotId === "pea") {
-      ctx.fillStyle = COLORS.dirt;
-      ctx.beginPath();
-      ctx.arc(0, 0, 5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = COLORS.cream;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-    } else if (projectile.lotId === "cluster" && !projectile.child) {
-      ctx.fillStyle = COLORS.juice;
-      [[0, -7], [-7, -1], [7, -1], [-4, 7], [5, 7], [0, 14]].forEach(([x, y]) => {
-        ctx.beginPath();
-        ctx.arc(x, y, 7, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-      });
-      ctx.strokeStyle = COLORS.copper;
-      ctx.beginPath();
-      ctx.moveTo(0, -13);
-      ctx.lineTo(5, -21);
-      ctx.stroke();
-    } else if (projectile.lotId === "lug") {
-      drawCrate(0, 0, 0, 0.62);
-    } else {
-      ctx.fillStyle = COLORS.juice;
-      ctx.beginPath();
-      ctx.arc(0, 0, lot.radius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = "rgba(243,230,200,0.55)";
-      ctx.beginPath();
-      ctx.arc(-lot.radius * 0.3, -lot.radius * 0.32, Math.max(1.4, lot.radius * 0.2), 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = COLORS.copper;
-      ctx.beginPath();
-      ctx.moveTo(0, -lot.radius + 1);
-      ctx.lineTo(4, -lot.radius - 6);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  function drawProjectiles() {
-    state.projectiles.forEach((projectile) => {
-      projectile.trail.forEach((point, index) => {
-        const alpha = (index + 1) / projectile.trail.length * 0.34;
-        ctx.fillStyle = projectile.lotId === "pea" ? `rgba(243,230,200,${alpha})` : `rgba(90,22,56,${alpha})`;
-        ctx.beginPath();
-        ctx.arc(point.x, point.y, projectile.lotId === "lug" ? 4 : 2.6, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      drawProjectileShape(projectile);
-    });
-  }
-
-  function previewPoints(cart, lot, angle, power) {
-    const muzzle = muzzleFor(cart);
-    const velocity = velocityFor(cart, lot, angle, power);
-    let x = muzzle.x;
-    let y = muzzle.y;
-    let vx = velocity.x;
-    let vy = velocity.y;
-    const points = [];
-    let apexIndex = -1;
-    for (let step = 0; step < 80; step += 1) {
-      const previousVy = vy;
-      vy += GRAVITY * lot.gravity * 0.055;
-      x += vx * 0.055;
-      y += vy * 0.055;
-      if (apexIndex < 0 && previousVy < 0 && vy >= 0) apexIndex = points.length;
-      if (step % 2 === 0) points.push({ x, y });
-      if (x < 0 || x > W || y > H || (x >= 0 && x <= W && y + lot.radius >= groundAt(x))) break;
-    }
-    return { points, apexIndex, end: points[points.length - 1] };
-  }
-
-  function drawAimPreview() {
-    if (state.mode !== "match" || state.turn !== "player" || state.phase !== "aim") return;
-    const cart = carts.player;
-    const lot = LOTS[state.selected];
-    const preview = previewPoints(cart, lot, state.aimAngle, state.aimPower);
-    const muzzle = muzzleFor(cart);
-
-    ctx.save();
-    ctx.strokeStyle = "rgba(243,230,200,0.32)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(muzzle.x, muzzle.y);
-    const guideLength = 34 + state.aimPower * 0.45;
-    const radians = state.aimAngle * Math.PI / 180;
-    ctx.lineTo(muzzle.x + Math.cos(radians) * guideLength, muzzle.y - Math.sin(radians) * guideLength);
-    ctx.stroke();
-
-    const firstLesson = !state.stats || state.stats.shots === 0;
-    const revealCount = firstLesson
-      ? preview.points.length
-      : lot.id === "cluster" && preview.apexIndex >= 0 ? Math.max(14, preview.apexIndex + 2) : 14;
-    const visiblePoints = preview.points.slice(0, revealCount);
-    visiblePoints.forEach((point, index) => {
-      const fade = 1 - index / Math.max(1, visiblePoints.length) * 0.48;
-      ctx.fillStyle = `rgba(90,22,56,${fade})`;
-      ctx.strokeStyle = `rgba(243,230,200,${fade * 0.72})`;
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.arc(point.x, point.y, index % 4 === 0 ? 4.2 : 3.1, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-    });
-
-    if (lot.id === "cluster" && preview.apexIndex >= 0) {
-      const point = preview.points[Math.min(preview.points.length - 1, preview.apexIndex)];
-      if (point) {
-        ctx.strokeStyle = COLORS.cream;
-        ctx.lineWidth = 1.5;
-        for (let i = -2; i <= 2; i += 1) {
-          ctx.beginPath();
-          ctx.moveTo(point.x, point.y);
-          ctx.lineTo(point.x + i * 11, point.y + 17 + Math.abs(i) * 2);
-          ctx.stroke();
-        }
-      }
-    }
-
-    if (firstLesson && preview.end) {
-      ctx.strokeStyle = COLORS.cream;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(preview.end.x - 10, preview.end.y - 3);
-      ctx.lineTo(preview.end.x, preview.end.y + 7);
-      ctx.lineTo(preview.end.x + 10, preview.end.y - 3);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  function drawEffects() {
-    state.rings.forEach((ring) => {
-      ctx.save();
-      ctx.globalAlpha = clamp(ring.life / ring.maxLife, 0, 1) * 0.82;
-      ctx.strokeStyle = ring.color;
-      ctx.lineWidth = 5 * ring.life / ring.maxLife + 1;
-      ctx.beginPath();
-      ctx.arc(ring.x, ring.y, ring.radius, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-    });
-
-    state.particles.forEach((particle) => {
-      ctx.save();
-      ctx.globalAlpha = clamp(particle.life / particle.maxLife, 0, 1) * (particle.kind === "smoke" ? 0.38 : 0.9);
-      ctx.fillStyle = particle.color;
-      if (particle.kind === "dirt") {
-        ctx.translate(particle.x, particle.y);
-        ctx.rotate(particle.x * 0.02);
-        ctx.fillRect(-particle.size / 2, -particle.size / 2, particle.size, particle.size * 0.62);
-      } else {
-        ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.restore();
-    });
-
-    state.floaters.forEach((floater) => {
-      const alpha = clamp(floater.life / floater.maxLife, 0, 1);
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.textAlign = "center";
-      ctx.font = `900 ${floater.strong ? 27 : 20}px Impact, Haettenschweiler, sans-serif`;
-      ctx.lineWidth = 6;
-      ctx.strokeStyle = COLORS.ink;
-      ctx.strokeText(floater.copy, floater.x, floater.y);
-      ctx.fillStyle = COLORS.cream;
-      ctx.fillText(floater.copy, floater.x, floater.y);
-      ctx.restore();
-    });
-  }
-
-  function drawSideLabels() {
-    ctx.save();
-    ctx.font = "900 11px Arial Narrow, sans-serif";
-    ctx.letterSpacing = "2px";
-    ctx.textAlign = "center";
-    ctx.fillStyle = "rgba(243,230,200,0.64)";
-    ctx.strokeStyle = COLORS.ink;
-    ctx.lineWidth = 4;
-    const yardY = groundAt(carts.player.x) + 28;
-    const lateY = groundAt(carts.enemy.x) + 28;
-    ctx.strokeText("YARD / SIDEWINDER", carts.player.x, yardY);
-    ctx.fillText("YARD / SIDEWINDER", carts.player.x, yardY);
-    ctx.strokeText("LATE / BOOTLEGGER", carts.enemy.x, lateY);
-    ctx.fillText("LATE / BOOTLEGGER", carts.enemy.x, lateY);
-    ctx.restore();
-  }
-
-  function render2d() {
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = COLORS.sky;
-    ctx.fillRect(0, 0, W, H);
-    ctx.save();
-    if (state.shake > 0) {
-      const strength = state.shake;
-      ctx.translate(randomBetween(-strength, strength), randomBetween(-strength * 0.5, strength * 0.5));
-    }
-    drawSky();
-    drawTerrain();
-    drawStains();
-    drawFieldSign();
-    drawCart(carts.player);
-    drawCart(carts.enemy);
-    drawIdleCrew();
-    drawCeremony();
-    drawAimPreview();
-    drawProjectiles();
-    drawEffects();
-    drawSideLabels();
-    ctx.restore();
-  }
 
   let previousTime = performance.now();
   let accumulator = 0;
@@ -2088,8 +1434,6 @@
     }
     if (window.__BAG__.render3D) {
       window.__BAG__.render3D();
-    } else {
-      render2d();
     }
     requestAnimationFrame(frame);
   }
@@ -2107,6 +1451,8 @@
         beginShot("player", state.selected, state.aimAngle, state.aimPower, state.aimCut);
       }
     },
+    velocityFor,
+    muzzleFor,
     state,
     carts,
     terrain,
@@ -2114,8 +1460,9 @@
     W, H, CELL,
     groundAt,
     LOTS,
-    IMG,
     COLORS,
+    gestureState: { state: "idle", origin: {x:0, y:0}, current: {x:0, y:0}, valid: false },
+    getGrabRect: null,
     snapshot() {
       return {
         mode: state.mode,
@@ -2131,10 +1478,6 @@
     }
   };
 
-  assetsReady.finally(() => {
-    if (window.__BAG__.render3D) window.__BAG__.render3D();
-    else render2d();
-  });
   requestAnimationFrame(frame);
 
   if ("serviceWorker" in navigator && window.isSecureContext) {

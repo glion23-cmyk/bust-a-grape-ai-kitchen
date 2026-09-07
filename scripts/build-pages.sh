@@ -6,7 +6,7 @@ output_dir="$project_root/dist"
 staging_dir="$(mktemp -d /tmp/bust-a-grape-pages.XXXXXX)"
 trap 'rm -rf "$staging_dir"' EXIT
 
-mkdir -p "$staging_dir/content" "$staging_dir/art/gui" "$staging_dir/art/sprites"
+mkdir -p "$staging_dir/content" "$staging_dir/art/gui"
 
 cp \
   "$project_root/index.html" \
@@ -26,12 +26,6 @@ cp \
   "$project_root/art/gui/apple-touch-icon.png" \
   "$project_root/art/gui/lockup.png" \
   "$staging_dir/art/gui/"
-cp \
-  "$project_root/art/sprites/kansas-dusk.jpg" \
-  "$project_root/art/sprites/sidewinder.png" \
-  "$project_root/art/sprites/bootlegger.png" \
-  "$project_root/art/sprites/pip-merlot.png" \
-  "$staging_dir/art/sprites/"
 cp "$project_root/hosting/_headers" "$project_root/hosting/robots.txt" "$staging_dir/"
 
 mkdir -p "$output_dir"

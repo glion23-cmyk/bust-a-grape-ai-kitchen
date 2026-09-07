@@ -6,14 +6,24 @@
 - Dimensional Round 02 preview: `https://dimensional-round-02.bust-a-grape.pages.dev`
 - Production branch: `main`
 - Co-creator forks: `cook/gemini` and `cook/claude`
-- Current integrated round: 2; Ritual Rivalry gate close verified locally
-- Current build: The dimensional pivot. The game now renders in true 3D WebGL via Three.js (with a complete 2D fallback), projecting standard deterministic rules across a volume where depth is collision-bearing.
+- Current integrated round: 3; Modern Kansas vertical slice verified locally on `rebuild/modern-kansas`
+- Current build: compact procedural 3D farm-future launchers, wheel-high bunch Pips, launcher-origin Pull + Shape input, bright Kansas daylight, collision-bearing depth, and a phone-readable modern broadcast HUD.
 
 ## Current truth
 
-The feature branch has broken out of the flat Canvas prototype. It now carries deterministic `(x,y,z)` projectile state, z-aware terrain and splash queries, a usable CUT control, a narrow 3D terrain stage, a physical broadcast camera, Kansas/cart/Pip billboards, and a working Canvas fallback. The production bundle and offline asset list include the local renderer and its MIT-licensed Three.js dependency.
+The Round 03 branch replaces tap-anywhere aiming and UI sliders with a 64px launcher-ring grab, 28px dead zone, thumb-reachable power curve, pull-derived lift/power, and gesture curvature for depth hook. Sidewinder, Bootlegger, ammunition, and Pips are procedural meshes rather than billboards. Terrain deformation, juice stains, impact rings, ceremony camera pushes, haptics, wind readout, and four-bottle matches are live. The offline bundle includes local Three.js and cache `bag-v8`.
 
-## Current state — Round 02 locally closed
+## Current state — Round 03 locally verified
+
+Round 03 preserves the deterministic rules and rivalry loop from Round 02 while replacing the flat interaction and dark HUD. The public URL and existing Round 02 preview remain untouched.
+
+- Direct opponent taps and field taps cannot fire; pulls must begin on the Sidewinder ring.
+- A complete player → AI → player turn loop passes in headless Chromium.
+- A zero-wind TABLE shot at 45° / 54% deterministically scores at x=1037.
+- 740×360 and 844×390 have no document overflow and retain usable lot targets.
+- The packaged Pages bundle initializes the procedural WebGL identity and manifest.
+
+## Prior state — Round 02
 
 Gemini completed the Round 02 "Ritual Rivalry" build. Opus returned `REPAIR`; independent integration review then rejected invalid first-pass evidence and closed the three blockers with reproducible localhost fixtures. This candidate is not yet promoted to the public URL.
 
@@ -28,4 +38,4 @@ The Cloudflare branch preview was deployed from commit `778fc45` and rechecked r
 
 ## Open seam
 
-Do not spend the next Opus pass on another rendering migration. Give it human playtest evidence: whether CUT is learnable, whether 15 units feels earned rather than arbitrary, whether ceremony timing interrupts flow, and whether the Grudge Card produces an honest rematch impulse. Physical iPhone/Android GPU, safe-area, audio-resume, and thumb testing remain the release gate.
+Physical iPhone/Android GPU, safe-area, audio-resume, haptic, install/offline, and thumb-gesture testing remain the release gate. Decide whether WebGL is an explicit minimum requirement or whether to maintain a separate low-spec renderer; the old Canvas fallback is no longer feature-complete.

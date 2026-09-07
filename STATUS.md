@@ -1,5 +1,5 @@
 # STATUS — accumulation index
-Updated 2026-09-06
+Updated 2026-09-07
 
 This file is what the rebuilt playable slice actually has versus what a fuller 1.0 still needs.
 
@@ -7,14 +7,14 @@ This file is what the rebuilt playable slice actually has versus what a fuller 1
 
 - Title: **Bust a Grape**
 - Genre costume: artillery hill duel. Always grapes.
-- Slice map: The Ditch. No scoot. 3 HP. Wind off.
+- Slice map: The Ditch. No scoot. 4 HP. Seeded per-turn wind.
 - Live lots: Table / Pea / Cluster / Lug
-- Controls: drag to aim, release to fire (mobile + desktop)
+- Controls: grab the launcher ring, Pull + Shape, release to fire (mobile + desktop)
 - Pips: walking grape **bunches** with arms, legs, stem, boots, stern face
 - Pips are not Minions and not rats
 - Mouth: text, PG-13
 - Oneshot audio: synth SFX only
-- Delivery: mobile-first web/PWA. Current candidate is HTML + Three.js WebGL with a complete Canvas fallback.
+- Delivery: mobile-first web/PWA. Current candidate is HTML + procedural Three.js WebGL; the old Canvas path is not feature-complete.
 
 ## Have (in this folder)
 
@@ -82,7 +82,8 @@ Do not build Sidewinder/Bootlegger at full blueprint scale.
 
 - Round 01: true projectile depth, z-aware carts/terrain/splash, 3D dirt mesh, physical broadcast camera, Kansas launcher/Pip billboards, CUT control, and automatic Canvas degradation.
 - Round 02: Dead Lane/Graze/Wide depth grades, distinct four-lot impacts, 3/3/5/5-Pip launch tableaux, best-of-three Grudge Cards, and persistent local rivalry history.
-- Browser gates: exact 740×360 and 844×390 layouts, real NEXT MATCH pointer transition, reload persistence, forced Canvas fallback, seeded AI balance, and four tuned ammo impacts.
+- Round 03: launcher-origin Pull + Shape, compact procedural launchers/Pips/ammunition, bright Kansas daylight, modern cream/wine HUD, camera ceremonies, haptics, and persistent 3D stains.
+- Browser gates: exact 740×360 and 844×390 layouts, opponent-tap rejection, dead-zone cancellation, strong low-pull reach, complete player/AI loop, deterministic scoring shot, seeded AI balance, and packaged-build smoke.
 - Hosted branch preview is deliberately separate from the stable public alias until physical iPhone/Android playtesting clears it.
 
 ## Need for oneshot 1.0 — not boards
@@ -94,14 +95,14 @@ The oneshot is playable with production art and procedural effects. “Oneshot 1
 - [x] Yard and Late launcher sprites
 - [x] Four visibly different ammo behaviors and silhouettes
 - [x] Impact pulp, dirt, persistent stain, crater, and shake feedback
-- [x] Kansas dusk and painted destructible dirt treatment
+- [x] Bright Kansas daylight, 3D destructible dirt, juice stains, and impact treatment
 - [x] Title lockup, crate lot buttons, juice rail, bottles, broadcast line, and result cards
 - [x] Synthesized thump, snap, split, splat, bottle, UI, and result cues
 - [x] Browser phone-landscape layout and touch-distance test
 - [x] PWA manifest, app icons, and offline rematch shell
 
 ### Still worth producing for 1.0
-- [ ] Purpose-drawn Pip animation sheet: idle, walk, wipe/weigh, calipers, pile-on, tackle; Merlot/Cab/green
+- [ ] Authored Pip model/rig pass beyond the current procedural bunches and ceremony props
 - [ ] Recorded and mixed SFX replacing procedural synthesis
 - [ ] One original title hook / reactive score sketch
 - [ ] Physical iPhone and Android landscape playtest; tune drag curve from actual thumbs
@@ -122,8 +123,8 @@ The oneshot is playable with production art and procedural effects. “Oneshot 1
 
 These block a serious 1.0 more than extra drawings:
 
-1. **Physical-phone feel pass** — browser emulation passes; actual thumb travel still decides whether `dist / 4.15` is final.
-2. **Sprite animation** — choreography reads now, but dedicated frames will make the Pips feel authored rather than staged from one pose.
+1. **Physical-phone feel pass** — browser emulation passes; actual thumb travel still decides the final 150–220px responsive pull range.
+2. **Authored character animation** — procedural choreography reads now, but dedicated rigs will make the Pips feel fully authored.
 3. **Audio production** — procedural cues are responsive, but the game still needs its own recorded sonic fingerprint and title hook.
 4. **Longer balance telemetry** — PEA's two-bottle direct reward and CLUSTER's two-damage cap need a real group playtest.
 

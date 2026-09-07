@@ -14,9 +14,11 @@ Then open `http://127.0.0.1:4173`.
 
 ### Play on a phone
 
-The current dimensional candidate is online at:
+The previous Round 02 dimensional candidate is online at:
 
 `https://dimensional-round-02.bust-a-grape.pages.dev`
+
+The brighter Modern Kansas Round 03 rebuild is currently local on `rebuild/modern-kansas`; it has not replaced either hosted build.
 
 Rotate the phone sideways. It is a Cloudflare branch preview, so it stays available when this Mac is asleep and does not replace the stable production build at `https://bust-a-grape.pages.dev`.
 
@@ -51,22 +53,22 @@ The game has a two-model iteration rig with separate Git worktrees. Claude Opus 
 Cook rounds do not publish by default. Set `BAG_DEPLOY_AFTER_COOK=1` only when an integrated round should replace the public build.
 
 - Pick TABLE, PEA, CLUSTER, or LUG.
-- Drag on the field to set angle and juice.
+- Grab the Sidewinder's cyan launch ring; pull to set lift and juice, then bend the gesture to shape the depth lane.
 - Release to begin the crew ceremony and launch.
-- Break all three of the Late cart's HP bottles before it breaks yours.
+- Break all four of the Late cart's HP bottles before it breaks yours.
 
 The first shot shows the full teaching arc. After that, the chalk only shows the climb; each lot remembers its own last angle and power, and old juice stains help you walk the range in.
 
 ## Current slice
 
-- Compact Sidewinder twin-flywheel accelerator versus compact Bootlegger pressure-lariat thrower
-- True `(x,y,z)` fixed-step ballistics, depth-local craters/splash, a 3D dirt stage, and Canvas degradation
-- CUT-driven Dead Lane/Graze/Wide skill tiers with distinct camera-framed impacts
+- Compact procedural-3D Sidewinder twin-flywheel accelerator versus compact Bootlegger pressure-lariat thrower
+- True `(x,y,z)` fixed-step ballistics, depth-local craters/splash, a 3D dirt stage, persistent stains, and camera-framed impacts
+- Pull + Shape depth control with Dead Lane/Graze/Wide skill tiers
 - Four mechanically distinct grape lots, including five-way Cluster breakup
-- Four readable 3D Pip crew tableaux using wheel-scale painted bunches
+- Four readable 3D Pip crew tableaux using wheel-scale bunches, ceremony props, and camera push-ins
 - Ballistic-search AI with target-plane depth error derived from each solved shot
 - Contextual broadcast calls, hit streaks, match stats, opt-in best-of-three, and persistent local Grudge tally
-- Mouse, touch, and keyboard controls; phone-landscape layout
+- Touch-first launcher gesture, haptics, mouse/keyboard support, phone-landscape layout, and offline install shell
 
 The approved art direction and source boards live in `art/boards/`. `STATUS.md` is the accumulation index.
 

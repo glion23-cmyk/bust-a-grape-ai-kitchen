@@ -1,10 +1,10 @@
-const CACHE_NAME = "bag-v7";
+const CACHE_NAME = "bag-v8";
 const CORE_FILES = [
   "./",
   "./index.html",
-  "./style.css?v=7",
-  "./game.js?v=6",
-  "./renderer3d.js?v=4",
+  "./style.css?v=8",
+  "./game.js?v=7",
+  "./renderer3d.js?v=5",
   "./vendor/three.min.js",
   "./vendor/LICENSE.three.txt",
   "./manifest.webmanifest",
@@ -12,11 +12,7 @@ const CORE_FILES = [
   "./content/lines.json",
   "./art/gui/app-icon.svg",
   "./art/gui/apple-touch-icon.png",
-  "./art/gui/lockup.png",
-  "./art/sprites/kansas-dusk.jpg",
-  "./art/sprites/sidewinder.png",
-  "./art/sprites/bootlegger.png",
-  "./art/sprites/pip-merlot.png"
+  "./art/gui/lockup.png"
 ];
 
 self.addEventListener("install", (event) => {

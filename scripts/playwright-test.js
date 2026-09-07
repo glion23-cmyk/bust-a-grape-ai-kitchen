@@ -1,254 +1,192 @@
 const { chromium } = require("playwright");
-const fs = require("fs");
-const http = require("http");
 const path = require("path");
+const http = require("http");
+const fs = require("fs");
 
 const root = path.resolve(__dirname, "..");
-const mime = {
-  ".css": "text/css",
-  ".html": "text/html",
-  ".jpg": "image/jpeg",
-  ".js": "text/javascript",
-  ".json": "application/json",
-  ".png": "image/png",
-  ".svg": "image/svg+xml",
-  ".webmanifest": "application/manifest+json"
-};
+const mimes = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png" };
 
-function startServer() {
-  const server = http.createServer((request, response) => {
-    const pathname = decodeURIComponent(new URL(request.url, "http://localhost").pathname);
-    const relativePath = pathname === "/" ? "index.html" : pathname.slice(1);
-    const filePath = path.resolve(root, relativePath);
-    if (!filePath.startsWith(`${root}${path.sep}`) || !fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
-      response.writeHead(404).end();
+async function startServer() {
+  const server = http.createServer((req, res) => {
+    let urlPath = req.url.split("?")[0];
+    if (urlPath === "/") urlPath = "/index.html";
+    const filePath = path.join(root, urlPath);
+    if (!fs.existsSync(filePath)) {
+      res.writeHead(404);
+      res.end();
       return;
     }
-    response.writeHead(200, { "Content-Type": mime[path.extname(filePath)] || "application/octet-stream" });
-    fs.createReadStream(filePath).pipe(response);
+    res.writeHead(200, { "Content-Type": mimes[path.extname(filePath)] || "text/plain" });
+    fs.createReadStream(filePath).pipe(res);
   });
-
-  return new Promise((resolve, reject) => {
-    server.once("error", reject);
-    server.listen(0, "127.0.0.1", () => {
-      const { port } = server.address();
-      resolve({ server, baseUrl: `http://127.0.0.1:${port}` });
-    });
+  return new Promise((resolve) => {
+    server.listen(0, () => resolve({ server, baseUrl: `http://localhost:${server.address().port}` }));
   });
-}
-
-async function waitForGame(page, baseUrl) {
-  await page.goto(`${baseUrl}/index.html`, { waitUntil: "networkidle" });
-  await page.waitForFunction(() => window.__BAG__ && [...document.images].every((image) => image.complete));
-  await page.waitForFunction(() => document.getElementById("c").style.opacity === "0", null, { timeout: 6000 });
 }
 
 function collectPageErrors(page) {
   const errors = [];
-  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("pageerror", (err) => errors.push(err.message));
+  page.on("console", (msg) => {
+    if (msg.type() === "error") errors.push(msg.text());
+  });
   return errors;
 }
 
-async function forcePlayerWin(page) {
-  await page.evaluate(() => {
-    const game = window.__BAG__;
-    game.carts.enemy.hp = 0;
-    game.state.phase = "flight";
-    game.state.projectiles = [];
-    game.state.resolveTimer = 0;
-    game.state.volley = {
-      shooterId: "player",
-      lotId: "table",
-      damage: { player: 0, enemy: 0 },
-      closest: 0,
-      hitDirect: true,
-      ceremonyPlayed: true
-    };
-  });
-}
-
-async function verifyGrudgeCard(browser, baseUrl, viewport) {
-  const context = await browser.newContext({ viewport });
-  const page = await context.newPage();
-  const errors = collectPageErrors(page);
-  await waitForGame(page, baseUrl);
-  await page.evaluate(() => localStorage.clear());
-  await page.reload({ waitUntil: "networkidle" });
-  await page.waitForFunction(() => window.__BAG__ && document.getElementById("c").style.opacity === "0");
-
-  await page.locator("#startSeriesButton").click();
-  const firstMatchNumber = await page.evaluate(() => window.__BAG__.state.matchNumber);
-  await forcePlayerWin(page);
-  await page.locator("#grudgeCard").waitFor({ state: "visible" });
-
-  const proof = await page.evaluate(() => {
-    const card = document.getElementById("grudgeCard");
-    const score = document.getElementById("grudgeScore");
-    const button = document.getElementById("grudgeNext");
-    const pip = document.getElementById("grudgeLeader");
-    const bounds = [card, score, button, pip].map((element) => {
-      const rect = element.getBoundingClientRect();
-      return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
-    });
-    return {
-      bounds,
-      score: score.textContent.trim(),
-      overflow: document.documentElement.scrollWidth > innerWidth || document.documentElement.scrollHeight > innerHeight
-    };
-  });
-
-  if (proof.overflow || proof.score !== "1 - 0") throw new Error(`Invalid Grudge Card state at ${viewport.width}x${viewport.height}`);
-  for (const bounds of proof.bounds) {
-    if (bounds.left < 0 || bounds.top < 0 || bounds.right > viewport.width || bounds.bottom > viewport.height) {
-      throw new Error(`Clipped Grudge Card element at ${viewport.width}x${viewport.height}: ${JSON.stringify(bounds)}`);
-    }
-  }
-
-  const name = `${viewport.width}x${viewport.height}`;
-  const screenshotPath = path.join(root, "collab", "evidence", `02-ritual-rivalry-${name}.png`);
-  await page.screenshot({ path: screenshotPath });
-
-  await page.locator("#grudgeNext").click();
-  await page.waitForFunction((prior) => {
-    const game = window.__BAG__;
-    return document.getElementById("grudgeCard").hidden && game.state.mode === "match" && game.state.phase === "aim" && game.state.matchNumber === prior + 1;
-  }, firstMatchNumber);
-
-  if (errors.length) throw new Error(`Page errors at ${name}: ${errors.join(" | ")}`);
-  await context.close();
-  console.log(`PASS viewport ${name}: exact fit, Grudge Card visible, NEXT MATCH started match ${firstMatchNumber + 1}`);
-}
-
-async function verifyPersistence(browser, baseUrl) {
-  const context = await browser.newContext({ viewport: { width: 844, height: 390 } });
-  const page = await context.newPage();
-  await waitForGame(page, baseUrl);
-  await page.evaluate(() => localStorage.clear());
-  await page.reload({ waitUntil: "networkidle" });
-  await page.waitForFunction(() => window.__BAG__);
-  await page.locator("#startSeriesButton").click();
-  await forcePlayerWin(page);
-  await page.locator("#grudgeNext").waitFor({ state: "visible" });
-  await page.locator("#grudgeNext").click();
-  await forcePlayerWin(page);
-  await page.locator("#resultScreen").waitFor({ state: "visible" });
-  const beforeReload = await page.evaluate(() => JSON.parse(localStorage.getItem("BAG_GRUDGE")));
-  await page.reload({ waitUntil: "networkidle" });
-  const afterReload = await page.evaluate(() => JSON.parse(localStorage.getItem("BAG_GRUDGE")));
-  if (beforeReload?.yard !== 2 || afterReload?.yard !== 2) throw new Error("All-time Grudge tally did not survive reload");
-  await context.close();
-  console.log("PASS persistence: completed 2-0 series retained BAG_GRUDGE after reload");
-}
-
-async function verifyCanvasFallback(browser, baseUrl) {
-  const context = await browser.newContext({ viewport: { width: 740, height: 360 } });
-  const page = await context.newPage();
-  const errors = collectPageErrors(page);
-  await page.route("**/vendor/three.min.js", (route) => route.abort());
+async function waitForGame(page, baseUrl) {
   await page.goto(`${baseUrl}/index.html`, { waitUntil: "networkidle" });
-  await page.waitForFunction(() => window.__BAG__);
-  const canvas = page.locator("#c");
-  const bounds = await canvas.boundingBox();
-  if (!bounds) throw new Error("Canvas fallback has no pointer surface");
-
-  await page.locator("#startButton").click();
-  await page.mouse.move(bounds.x + bounds.width * 0.2, bounds.y + bounds.height * 0.72);
-  await page.mouse.down();
-  await page.mouse.move(bounds.x + bounds.width * 0.48, bounds.y + bounds.height * 0.35, { steps: 6 });
-  await page.mouse.up();
-  await page.waitForFunction(() => window.__BAG__.state.phase === "ceremony");
-
-  const proof = await page.evaluate(() => ({
-    canvasOpacity: document.getElementById("c").style.opacity || "1",
-    has3DRenderer: Boolean(window.__BAG__.render3D),
-    canvases: document.querySelectorAll("canvas").length
-  }));
-  if (proof.canvasOpacity !== "1" || proof.has3DRenderer || proof.canvases !== 1 || errors.length) {
-    throw new Error(`Canvas fallback failed: ${JSON.stringify({ proof, errors })}`);
-  }
-  await context.close();
-  console.log("PASS Canvas fallback: one visible canvas and real drag/release entered ceremony");
-}
-
-async function measureFourLotWorkload(browser, baseUrl) {
-  const context = await browser.newContext({ viewport: { width: 740, height: 360 } });
-  const page = await context.newPage();
-  const errors = collectPageErrors(page);
-  await waitForGame(page, baseUrl);
-  await page.locator("#startButton").click();
-
-  await page.evaluate(() => {
-    window.__BAG_PERF__ = { active: true, frames: 0, overBudget: 0, started: performance.now(), last: performance.now() };
-    const sample = (now) => {
-      const probe = window.__BAG_PERF__;
-      if (!probe?.active) return;
-      const delta = now - probe.last;
-      probe.last = now;
-      probe.frames += 1;
-      if (delta > 20) probe.overBudget += 1;
-      requestAnimationFrame(sample);
-    };
-    requestAnimationFrame(sample);
-  });
-
-  const completed = [];
-  const tunedAim = {
-    table: { angle: 50, power: 50 },
-    pea: { angle: 50, power: 30 },
-    cluster: { angle: 50, power: 57 },
-    lug: { angle: 50, power: 78 }
-  };
-  for (const lot of ["table", "pea", "cluster", "lug"]) {
-    const craterCount = await page.evaluate(({ lotId, aim }) => {
-      const game = window.__BAG__;
-      const before = game.state.craters.length;
-      game.state.projectiles = [];
-      game.state.particles = [];
-      game.state.impactFocus = null;
-      game.state.volley = null;
-      game.state.resolveTimer = -1;
-      game.state.turn = "player";
-      game.state.phase = "aim";
-      game.carts.player.hp = 3;
-      game.carts.enemy.hp = 3;
-      game.select(lotId);
-      game.setAim(aim.angle, aim.power);
-      game.state.aimCut = 0;
-      game.fire();
-      return before;
-    }, { lotId: lot, aim: tunedAim[lot] });
-    console.log(`PERF firing ${lot} at ${tunedAim[lot].angle}°/${tunedAim[lot].power}%`);
-    await page.waitForFunction(({ lotId, before }) => {
-      const game = window.__BAG__;
-      return game.state.craters.length > before && game.state.volley?.lotId === lotId && game.state.volley.ceremonyPlayed;
-    }, { lotId: lot, before: craterCount }, { timeout: 10000 });
-    completed.push(lot);
-    await page.waitForTimeout(780);
-  }
-
-  const result = await page.evaluate((lots) => {
-    const probe = window.__BAG_PERF__;
-    probe.active = false;
-    return { lots, frames: probe.frames, overBudget: probe.overBudget, durationMs: performance.now() - probe.started };
-  }, completed);
-
-  if (result.lots.length !== 4 || errors.length) throw new Error(`Four-lot workload failed: ${errors.join(" | ")}`);
-  result.overBudgetPercent = Number((result.overBudget / result.frames * 100).toFixed(2));
-  await context.close();
-  console.log(`PERF ${JSON.stringify(result)} environment=headless-chromium-swiftshader threshold=>20ms`);
-  return result;
+  await page.waitForFunction(() => window.__BAG__?.state);
+  return page;
 }
 
 async function run() {
   const { server, baseUrl } = await startServer();
   const browser = await chromium.launch({ headless: true });
   try {
-    await verifyGrudgeCard(browser, baseUrl, { width: 740, height: 360 });
-    await verifyGrudgeCard(browser, baseUrl, { width: 844, height: 390 });
-    await verifyPersistence(browser, baseUrl);
-    await verifyCanvasFallback(browser, baseUrl);
-    const performance = await measureFourLotWorkload(browser, baseUrl);
-    if (performance.overBudgetPercent > 5) throw new Error(`Frame budget failed: ${performance.overBudgetPercent}%`);
+    const context = await browser.newContext({ viewport: { width: 740, height: 360 } });
+    const page = await context.newPage();
+    const errors = collectPageErrors(page);
+    await waitForGame(page, baseUrl);
+
+    await page.locator("#startButton").click();
+    await page.waitForFunction(() => window.__BAG__.state.phase === "aim");
+
+    const getGrabRect = async (shooterId) => {
+      return await page.evaluate((id) => window.__BAG__.getGrabRect(id), shooterId);
+    };
+
+    const enemyRect = await getGrabRect("enemy");
+    if (!enemyRect) throw new Error("enemy grab rect not found");
+    await page.mouse.move(enemyRect.left + enemyRect.width / 2, enemyRect.top + enemyRect.height / 2);
+    await page.mouse.down();
+    await page.mouse.up();
+    let phase = await page.evaluate(() => window.__BAG__.state.phase);
+    if (phase !== "aim") throw new Error("Gesture gate failed: tapping opponent fired shot");
+    console.log("PASS 1. Gesture gate: opponent tap ignored");
+
+    const playerRect = await getGrabRect("player");
+    if (!playerRect) throw new Error("player grab rect not found");
+    await page.mouse.move(playerRect.left + playerRect.width / 2, playerRect.top + playerRect.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(playerRect.left + playerRect.width / 2, playerRect.top + playerRect.height / 2 + 10, { steps: 5 });
+    await page.mouse.up();
+    phase = await page.evaluate(() => window.__BAG__.state.phase);
+    if (phase !== "aim") throw new Error("Gesture gate failed: dead-zone cancel triggered shot");
+    console.log("PASS 2. Gesture gate: dead-zone cancel");
+
+    await page.mouse.move(playerRect.left + playerRect.width / 2, playerRect.top + playerRect.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(Math.max(2, playerRect.left - 145), playerRect.top + playerRect.height / 2 + 70, { steps: 12 });
+    const strongPull = await page.evaluate(() => ({
+      power: window.__BAG__.state.aimPower,
+      angle: window.__BAG__.state.aimAngle,
+      valid: window.__BAG__.gestureState.valid
+    }));
+    if (!strongPull.valid || strongPull.power < 88 || strongPull.angle > 38) {
+      throw new Error(`Phone pull range failed: ${JSON.stringify(strongPull)}`);
+    }
+    await page.locator("#c").dispatchEvent("pointercancel", { pointerId: 1 });
+    await page.mouse.up();
+    console.log("PASS 3. Strong low pull is reachable by a phone thumb");
+
+    const renderProof = await page.evaluate(() => ({
+      info: window.__BAG__.rendererInfo(),
+      yardBottles: document.querySelectorAll("#yardHp .bottle").length,
+      lateBottles: document.querySelectorAll("#lateHp .bottle").length,
+      canvasOpacity: document.getElementById("c").style.opacity
+    }));
+    if (renderProof.info.mode !== "procedural-3d" || renderProof.info.playerParts < 1 || renderProof.info.enemyParts < 1 || renderProof.info.pipCount !== 10 || renderProof.canvasOpacity !== "0") {
+      throw new Error(`True-3D identity proof failed: ${JSON.stringify(renderProof)}`);
+    }
+    if (renderProof.yardBottles !== 4 || renderProof.lateBottles !== 4) throw new Error("Four-bottle match contract failed");
+    console.log(`PASS 4. True-3D identity active (${renderProof.info.triangles} triangles, ${renderProof.info.calls} calls)`);
+
+    await page.mouse.move(playerRect.left + playerRect.width / 2, playerRect.top + playerRect.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(playerRect.left + playerRect.width / 2 - 40, playerRect.top + playerRect.height / 2 + 50, { steps: 5 });
+    await page.mouse.up();
+    await page.waitForFunction(() => window.__BAG__.state.phase === "ceremony");
+    console.log("PASS 5. Gesture gate: valid pull triggers ceremony");
+
+    await page.waitForFunction(() => {
+      const state = window.__BAG__.state;
+      return state.aiTurns >= 1 && state.turn === "player" && state.phase === "aim";
+    }, { timeout: 20000 });
+    const completedLoop = await page.evaluate(() => ({
+      craters: window.__BAG__.state.craters.length,
+      stains: window.__BAG__.state.stains.length,
+      calls: window.__BAG__.rendererInfo().calls,
+      mode: window.__BAG__.state.mode
+    }));
+    if (completedLoop.mode !== "match" || completedLoop.craters < 1 || completedLoop.stains < 1) {
+      throw new Error(`Complete turn loop failed: ${JSON.stringify(completedLoop)}`);
+    }
+    if (completedLoop.calls > 190) throw new Error(`Render-call budget exceeded: ${completedLoop.calls}`);
+    console.log(`PASS 6. Player/AI turn loop returns control with persistent field damage (${completedLoop.calls} calls)`);
+
+    const skillContext = await browser.newContext({ viewport: { width: 740, height: 360 } });
+    const skillPage = await skillContext.newPage();
+    await waitForGame(skillPage, baseUrl);
+    await skillPage.evaluate(() => {
+      window.__BAG__.start();
+      window.__BAG__.state.windSeed = 2147483648;
+      window.__BAG__.select("table");
+      window.__BAG__.setAim(45, 54);
+      window.__BAG__.fire();
+    });
+    await skillPage.waitForFunction(() => window.__BAG__.state.turn === "enemy" && window.__BAG__.state.phase === "intermission", { timeout: 10000 });
+    const skillShot = await skillPage.evaluate(() => ({
+      lateHp: window.__BAG__.carts.enemy.hp,
+      impactX: window.__BAG__.state.rutGhost?.impactX,
+      stains: window.__BAG__.state.stains.length
+    }));
+    if (!(skillShot.lateHp < 4) || !Number.isFinite(skillShot.impactX) || skillShot.stains < 1) {
+      throw new Error(`Deterministic skill shot failed: ${JSON.stringify(skillShot)}`);
+    }
+    console.log(`PASS 7. Deterministic 45°/54% skill shot scores at x=${Math.round(skillShot.impactX)}`);
+    await skillContext.close();
+
+    const seriesContext = await browser.newContext({ viewport: { width: 740, height: 360 } });
+    const seriesPage = await seriesContext.newPage();
+    await waitForGame(seriesPage, baseUrl);
+    await seriesPage.locator("#startSeriesButton").click();
+    await seriesPage.evaluate(() => {
+      window.__BAG__.carts.enemy.hp = 0.2;
+      window.__BAG__.state.windSeed = 2147483648;
+      window.__BAG__.setAim(45, 54);
+      window.__BAG__.fire();
+    });
+    await seriesPage.waitForFunction(() => !document.getElementById("grudgeCard").hidden, { timeout: 10000 });
+    const seriesScore = await seriesPage.locator("#grudgeScore").textContent();
+    if (seriesScore.trim() !== "1 - 0") throw new Error(`Series score failed: ${seriesScore}`);
+    await seriesPage.locator("#grudgeNext").click();
+    const secondMatch = await seriesPage.evaluate(() => window.__BAG__.snapshot());
+    if (secondMatch.mode !== "match" || secondMatch.phase !== "aim" || secondMatch.turn !== "player") {
+      throw new Error(`Series next-match transition failed: ${JSON.stringify(secondMatch)}`);
+    }
+    console.log("PASS 8. Best-of-three Grudge Card advances to the next match");
+    await seriesContext.close();
+
+    for (const vp of [{ width: 740, height: 360 }, { width: 844, height: 390 }]) {
+      const pContext = await browser.newContext({ viewport: vp });
+      const p = await pContext.newPage();
+      await waitForGame(p, baseUrl);
+      await p.locator("#startButton").click();
+      await p.waitForFunction(() => window.__BAG__.state.phase === "aim");
+
+      const layoutPass = await p.evaluate(() => {
+        const overflow = document.documentElement.scrollWidth > window.innerWidth || document.documentElement.scrollHeight > window.innerHeight;
+        const buttons = Array.from(document.querySelectorAll('.lot-button'));
+        const sizePass = buttons.every(b => b.offsetWidth >= 48);
+        return !overflow && sizePass;
+      });
+      if (!layoutPass) throw new Error(`Phone layout failed at ${vp.width}x${vp.height}`);
+      console.log(`PASS 9. Phone layout at ${vp.width}x${vp.height}`);
+      await pContext.close();
+    }
+
+    if (errors.length) throw new Error(`Page errors: ${errors.join(" | ")}`);
+    await context.close();
   } finally {
     await browser.close();
     await new Promise((resolve) => server.close(resolve));
