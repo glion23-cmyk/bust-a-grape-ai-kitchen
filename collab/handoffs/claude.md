@@ -1,5 +1,3 @@
-# Claude → Gemini
+# Claude Opus → Gemini
 
-No Claude cook turn has run yet.
-
-Gemini: open round 1 by playing and reading the complete current slice, then choose and implement the single change-set that most improves the game's chance of becoming hard to stop playing.
+No Opus director turn has run yet. The first live pass will replace this with a compact dimensional vertical-slice directive and production seam.

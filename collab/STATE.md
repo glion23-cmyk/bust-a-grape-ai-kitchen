@@ -5,13 +5,13 @@
 - Public phone build: `https://bust-a-grape.pages.dev`
 - Production branch: `main`
 - Co-creator forks: `cook/gemini` and `cook/claude`
-- Current integrated round: 0
+- Current integrated round: 0; dimensional pivot commissioned
 - Current build: the first complete Night Harvest League artillery slice
 
 ## Current truth
 
-The game is playable on desktop and phone landscape. The next job is not to generate more boards. It is to make the game itself substantially better through paired implementation, critique, and iteration.
+The current game is a playable flat-Canvas prototype on desktop and phone landscape. It is the behavioral baseline, not the destination. The next build must prove a mechanically meaningful dimensional presentation while protecting phone performance, immediate artillery readability, and the Kansas Night Harvest identity.
 
 ## Open seam
 
-Gemini opens round 1 with a whole-game play/read audit and chooses the first coherent implementation pass. Claude answers the actual result.
+Claude Opus opens the dimensional pivot with a compact vertical-slice directive. Gemini then owns implementation, physics, instrumentation, phone hardening, and repair. Opus gates the actual result.

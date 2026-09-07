@@ -1,13 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-printf '\nCLAUDE SIGN-IN\n'
-printf 'Sign in with the Claude subscription you want the kitchen to conserve.\n\n'
-claude auth login --claudeai
-
-printf '\nGEMINI SIGN-IN\n'
-printf 'Choose Sign in with Google. After Gemini reaches its prompt, type /quit.\n\n'
-GEMINI_CLI_TRUST_WORKSPACE=true gemini --skip-trust
-
-printf '\nAUTH CHECK\n'
+printf '\nThe kitchen uses the existing signed-in Antigravity model supply.\n'
+printf 'Checking Opus and Gemini availability; no separate login should be needed.\n\n'
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/kitchen-doctor.sh"

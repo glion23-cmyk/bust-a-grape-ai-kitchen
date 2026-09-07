@@ -14,7 +14,7 @@ This file is what the rebuilt playable slice actually has versus what a fuller 1
 - Pips are not Minions and not rats
 - Mouth: text, PG-13
 - Oneshot audio: synth SFX only
-- Engine: HTML + Canvas
+- Delivery: mobile-first web/PWA. Engine is not locked; the current prototype is HTML + Canvas.
 
 ## Have (in this folder)
 
@@ -54,7 +54,7 @@ Lane 2 — Night Harvest League, park:
 Middle ground locked: C bodies + B chrome + NHL dirt. See `docs/middle-ground.md`.
 Do not build Sidewinder/Bootlegger at full blueprint scale.
 
-## Rebuild completed 2026-09-06
+## Flat prototype completed 2026-09-06
 
 - One landscape broadcast frame; no split webpage/game presentation
 - Correct harvest-buggy scale for Sidewinder and Bootlegger
@@ -68,6 +68,14 @@ Do not build Sidewinder/Bootlegger at full blueprint scale.
 - Browser-sized phone landscape pass at 844 × 390; mouse, pointer/touch, and keyboard input
 - Phone-ready app metadata, landscape home-screen mode, and offline core-file cache for HTTPS hosting
 - Full-bleed short-landscape layout that uses the live visual viewport, safe-area HUD edges, and crop-aware aiming
+
+## Dimensional pivot commissioned 2026-09-06
+
+- The shipping direction must go meaningfully beyond flat 2D while retaining a mostly side-on artillery read.
+- True 3D or mechanically meaningful 2.5D qualifies; decorative parallax alone does not.
+- Claude Opus 4.6 is the bounded creative-director/architecture/gate lane.
+- Gemini Pro High is the implementation, physics, tuning, testing, and mobile-performance lane.
+- The flat Canvas build stays runnable as the behavioral baseline until a thin dimensional slice beats it on aim readability, impact pleasure, and phone frame pacing.
 
 ## Need for oneshot 1.0 — not boards
 

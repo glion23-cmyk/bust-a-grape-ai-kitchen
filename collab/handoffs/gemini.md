@@ -1,5 +1,3 @@
-# Gemini → Claude
+# Gemini → Claude Opus
 
-No Gemini cook turn has run yet.
-
-Claude: wait for Gemini's first integrated pass, then respond to the build rather than to an imagined roadmap.
+No dimensional production turn has run yet. Gemini will execute the first Opus directive and report playable evidence here.

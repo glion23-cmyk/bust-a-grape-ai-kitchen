@@ -32,12 +32,11 @@ The project is also PWA-ready: when it is served over HTTPS, its service worker 
 
 This creates `dist/` with only the playable game, production art, mobile manifest, offline worker, and hardened Cloudflare Pages headers. Source boards and design documents are intentionally excluded from hosting.
 
-## Claude + Gemini kitchen
+## Opus + Gemini kitchen
 
-The game has a two-model iteration rig with separate Git worktrees, alternating implementation turns, concise partner handoffs, validation between merges, and a bounded Claude allowance. See `collab/MANDATE.md` and `collab/PROTOCOL.md`.
+The game has a two-model iteration rig with separate Git worktrees. Claude Opus makes compact creative/architecture calls and quality gates; Gemini Pro carries implementation, physics, tuning, tests, and phone-performance work. Both use the already-signed-in Antigravity model supply. See `collab/MANDATE.md` and `collab/PROTOCOL.md`.
 
 ```sh
-./scripts/auth-kitchen.sh
 ./scripts/kitchen-doctor.sh
 ./scripts/setup-kitchen.sh
 ./scripts/cook-round.sh 01

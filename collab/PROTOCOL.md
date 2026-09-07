@@ -1,44 +1,44 @@
-# Two-model cook protocol
+# Opus + Gemini cook protocol
 
-Each round is one shared conversation conducted through code, commits, and short handoffs.
+Each round is one shared conversation conducted through code, commits, narrow directives, evidence, and short handoffs. Both lanes run through the already-authenticated Antigravity CLI.
 
 ## Order
 
-1. Gemini syncs to the integrated `main` tree.
-2. Gemini reads Claude's last handoff, audits broadly, implements one coherent pass, tests it, and writes `collab/handoffs/gemini.md`.
-3. The runner validates and merges Gemini's fork into `main`.
-4. Claude syncs to that exact result.
-5. Claude reads Gemini's handoff and the new build, then critiques by implementing a focused answer, tests it, and writes `collab/handoffs/claude.md`.
-6. The runner validates and merges Claude's fork into `main`.
-7. The integrated build is rebuilt. Publishing is a separate explicit switch.
+1. **Opus directs.** It syncs to `main`, reads the compact state, and writes one round directive: the player promise, one coherent dimensional/loop advance, explicit non-goals, technical seams, and acceptance checks.
+2. The runner merges that directive into `main`.
+3. **Gemini produces.** It syncs to the exact directive, implements the playable slice, builds physics/performance diagnostics, tests it, and writes its evidence handoff.
+4. The runner validates and merges Gemini's fork into `main`.
+5. **Opus gates.** It reads the directive, Gemini handoff, touched files, and running result. It writes `VERDICT: PASS` or `VERDICT: REPAIR` with no more than three blockers.
+6. If repair is required, **Gemini closes the gate** in the same round and leaves fresh evidence.
+7. The integrated build is rebuilt. Publishing remains a separate explicit switch.
 
-The order can reverse in a future round if the state file records why, but the models never work from stale parallel assumptions.
+The models never work from stale parallel assumptions. Gemini may challenge a directive with evidence, but it must leave a coherent playable alternative—not a debate transcript.
 
-## Claude allowance discipline
+## Opus allowance discipline
 
-- Gemini carries broad repository digestion and the first pass.
-- Claude uses current files plus a concise partner handoff instead of a repeated full-history prompt.
-- Claude runs on Sonnet at high effort with a default ceiling of eight agent turns per round.
-- Each Claude pass is a fresh bounded session; durable knowledge lives here, not in an ever-growing chat transcript.
-- Claude does not spawn extra model teams or produce redundant audits.
-- If Claude hits an allowance wall, the runner stops cleanly. Gemini's already validated work remains integrated, and Claude resumes next round from the handoff instead of repeating context.
+- Use `claude-opus-4-6-thinking`, not Sonnet.
+- Opus decides; Gemini digests and builds. Do not spend Opus on mechanical repository traversal, bulk edits, repeated tests, asset conversion, or boilerplate.
+- A director pass emits one compact directive. A gate pass emits one verdict and at most three blockers.
+- The live prompt points Opus to the exact state, handoff, and current-round file so it does not reread history.
+- Durable reasoning lives in directives, gates, handoffs, and `DECISIONS.md`, not an expanding chat session.
+- Every Opus call is a fresh print-mode session. No recursive model teams.
 
 ## Definition of a valid turn
 
-A valid turn must:
+A valid Gemini production turn must:
 
 - change the playable game or materially improve the system that produces it;
 - preserve an immediately runnable state;
 - run proportionate checks;
 - update its handoff with what changed, why, evidence, remaining doubt, and the best opening for the partner.
 
-Pure brainstorming is not a cook turn. Deploying, publishing, altering Git topology, and deleting source assets belong to the outer runner, not either model.
+An Opus director/gate turn is valid when it resolves ambiguity into testable constraints or catches a real quality failure without generating design sprawl. Deploying, publishing, altering Git topology, and deleting source assets belong to the outer runner, not either model.
 
 ## Whole-game lenses
 
 The agents may choose their own work, but they must keep checking the whole:
 
-- identity and visual cohesion;
+- identity, dimensional staging, and visual cohesion;
 - aim feel, ballistics, terrain, hit readability, and skill expression;
 - meaningful ammo and tactical decisions;
 - opponent behavior, difficulty, pacing, comeback tension, and replay compulsion;
