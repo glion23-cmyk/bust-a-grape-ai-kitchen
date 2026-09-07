@@ -73,6 +73,7 @@ run_agy() {
   (
     cd "$tree"
     "$agy_bin" \
+      --new-project \
       --model "$model" \
       --mode accept-edits \
       --sandbox \
