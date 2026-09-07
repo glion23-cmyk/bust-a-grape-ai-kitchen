@@ -100,12 +100,11 @@ require_clean "$opus_tree" 'Opus'
 printf '=== ROUND %s / OPUS DIRECTS ===\n' "$round_id"
 git -C "$opus_tree" merge --ff-only main
 
-opus_director_prompt="$(cat <<EOF
+IFS= read -r -d '' opus_director_prompt <<EOF || true
 You are the Claude Opus creative-director/architecture lane for BUST A GRAPE, round $round_id. Follow CLAUDE.md, collab/MANDATE.md, collab/PROTOCOL.md, collab/STATE.md, and the partner handoffs. The user has made dimensional play a hard requirement: the destination cannot remain a flat 2D Canvas game. Spend this scarce Opus pass only on the decisive call.
 
 Inspect just enough of the current runnable prototype and relevant source to choose the smallest vertical slice that can prove a genuinely dimensional, phone-capable, hard-to-put-down BUST A GRAPE. Then create $directive_rel. It must contain: PLAYER PROMISE, THE ONE BUILD, WHY IT WINS, DIMENSIONAL MECHANIC (not decorative parallax), LOOP/RETENTION MOVE, TECHNICAL SEAM, PHONE BUDGET, ACCEPTANCE CHECKS, NON-GOALS, and GEMINI'S FIRST ACTION. Be opinionated and compact. Prefer an executable wedge over an engine rewrite manifesto. Update collab/handoffs/claude.md with no more than 12 actionable lines. Do not implement bulk code, create a backlog, deploy, publish, or touch Git.
 EOF
-)"
 
 run_agy "$opus_tree" claude-opus-4-6-thinking high \
   "$runs_dir/${round_id}-opus-director.json" "$opus_director_prompt"
@@ -117,12 +116,11 @@ commit_and_merge "$opus_tree" cook/claude "Opus directive $round_id"
 printf '\n=== ROUND %s / GEMINI PRODUCES ===\n' "$round_id"
 git -C "$gemini_tree" merge --ff-only main
 
-gemini_prompt="$(cat <<EOF
+IFS= read -r -d '' gemini_prompt <<EOF || true
 You are the Gemini Pro production/physics lane for BUST A GRAPE, round $round_id. Follow GEMINI.md, collab/MANDATE.md, collab/PROTOCOL.md, collab/STATE.md, and $directive_rel. Opus has already made the expensive product call. Turn it into the strongest coherent playable implementation you can in this worktree.
 
 Own the grunt work: rendering architecture, deterministic physics, collision/terrain, touch controls, opponent behavior, event feedback, instrumentation, degradation, tests, and repeated tuning. The build must remain runnable throughout. Implement real dimensional gameplay or the directive's staged proof of it; fake sprite parallax alone is a failure. Protect landscape phone readability and performance. Run proportionate automated checks and any local browser probes available. Replace collab/handoffs/gemini.md with a concise record of what changed, measurements/evidence, compromises, remaining risk, and exactly what Opus should inspect. Update collab/STATE.md if the integrated truth changed. Do not deploy, publish, alter Git, or merely return a plan.
 EOF
-)"
 
 run_agy "$gemini_tree" gemini-3.1-pro-high high \
   "$runs_dir/${round_id}-gemini-build.json" "$gemini_prompt"
@@ -135,12 +133,11 @@ commit_and_merge "$gemini_tree" cook/gemini "Gemini production $round_id"
 printf '\n=== ROUND %s / OPUS GATES ===\n' "$round_id"
 git -C "$opus_tree" merge --ff-only main
 
-opus_gate_prompt="$(cat <<EOF
+IFS= read -r -d '' opus_gate_prompt <<EOF || true
 You are the Claude Opus quality gate for BUST A GRAPE, round $round_id. This is a narrow second look, not another design session. Read $directive_rel, collab/handoffs/gemini.md, the files Gemini actually changed in the latest merged production commit, and the runnable result/evidence. Judge whether the build delivers the directive, meaningful dimensional play, compelling shot feel/loop value, and a credible phone path.
 
 Create $gate_rel. Its first non-heading line must be exactly VERDICT: PASS or VERDICT: REPAIR. Then give: WHAT LANDED, EVIDENCE CHECKED, and at most THREE BLOCKERS. A blocker must be concrete enough for Gemini to implement and verify. Update collab/handoffs/claude.md with only the verdict and next production seam. Do not generate a roadmap, reread the board archive, deploy, publish, alter Git, or perform bulk implementation. Make a surgical code correction only if it is cheaper than explaining it.
 EOF
-)"
 
 run_agy "$opus_tree" claude-opus-4-6-thinking high \
   "$runs_dir/${round_id}-opus-gate.json" "$opus_gate_prompt"
@@ -156,10 +153,9 @@ if [ "$verdict" = 'REPAIR' ]; then
   printf '\n=== ROUND %s / GEMINI CLOSES GATE ===\n' "$round_id"
   git -C "$gemini_tree" merge --ff-only main
 
-  gemini_repair_prompt="$(cat <<EOF
+  IFS= read -r -d '' gemini_repair_prompt <<EOF || true
 You are the Gemini Pro production/physics lane closing the Opus gate for BUST A GRAPE, round $round_id. Read $directive_rel, $gate_rel, and both handoffs. Implement and verify every listed blocker without expanding scope. Preserve the strongest existing work, keep the game runnable, and favor measured physics/performance fixes over prose. Replace collab/handoffs/gemini.md with blocker-by-blocker evidence and update collab/STATE.md if needed. Do not deploy, publish, alter Git, or stop at a plan.
 EOF
-)"
 
   run_agy "$gemini_tree" gemini-3.1-pro-high high \
     "$runs_dir/${round_id}-gemini-repair.json" "$gemini_repair_prompt"
