@@ -3,6 +3,7 @@
 ## Baseline
 
 - Public phone build: `https://bust-a-grape.pages.dev`
+- Dimensional Round 02 preview: `https://dimensional-round-02.bust-a-grape.pages.dev`
 - Production branch: `main`
 - Co-creator forks: `cook/gemini` and `cook/claude`
 - Current integrated round: 2; Ritual Rivalry gate close verified locally
@@ -15,6 +16,8 @@ The feature branch has broken out of the flat Canvas prototype. It now carries d
 ## Current state — Round 02 locally closed
 
 Gemini completed the Round 02 "Ritual Rivalry" build. Opus returned `REPAIR`; independent integration review then rejected invalid first-pass evidence and closed the three blockers with reproducible localhost fixtures. This candidate is not yet promoted to the public URL.
+
+The Cloudflare branch preview was deployed from commit `778fc45` and rechecked remotely at 740×360: WebGL identity loaded, the Grudge Card fit without overflow, and a real NEXT MATCH click advanced to Match 2. The stable production alias still serves the prior release.
 
 - `zAccuracy(impactZ, targetZ)` is deterministic and modifies damage.
 - AI depth spread derives from each solved shot's actual target-plane travel time.
