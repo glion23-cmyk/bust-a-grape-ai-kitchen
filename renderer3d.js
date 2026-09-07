@@ -132,6 +132,7 @@
   
   const playerCartMesh = new THREE.Group();
   const enemyCartMesh = new THREE.Group();
+  const crewMeshes = { player: [], enemy: [] };
   scene.add(playerCartMesh);
   scene.add(enemyCartMesh);
   let identityInitialized = false;
@@ -164,6 +165,83 @@
     return mesh;
   }
 
+  function addPipCrew(group, image, side) {
+    const seed = makePaintedPlane(image, 55, side === "enemy");
+    for (let index = 0; index < 5; index += 1) {
+      const pip = index === 0 ? seed : seed.clone();
+      pip.visible = false;
+      pip.renderOrder = 4 + index * 0.01;
+      pip.userData.restY = seed.position.y;
+      pip.userData.baseScaleX = pip.scale.x;
+      group.add(pip);
+      crewMeshes[side].push(pip);
+    }
+  }
+
+  function updatePipCrew(state) {
+    state.crewPose = null;
+    for (const side of ["player", "enemy"]) {
+      const pips = crewMeshes[side];
+      if (!pips.length) continue;
+      const facing = side === "player" ? 1 : -1;
+      const active = state.phase === "ceremony" && state.ceremony?.shooterId === side;
+      const progress = active ? Math.min(1, state.ceremony.elapsed / state.ceremony.duration) : 0;
+      const pulse = Math.sin(progress * Math.PI * 8);
+
+      const pose = (index, x, lift = 0, z = 14, rotation = 0) => {
+        const pip = pips[index];
+        pip.visible = true;
+        pip.position.set(x, pip.userData.restY + lift, z);
+        pip.rotation.z = rotation;
+        pip.scale.x = pip.userData.baseScaleX;
+      };
+
+      pips.forEach((pip) => {
+        pip.visible = false;
+        pip.rotation.z = 0;
+      });
+
+      if (!active) {
+        pose(0, -facing * 168, Math.sin(state.elapsed * 2.1) * 1.5);
+        continue;
+      }
+
+      state.crewPose = {
+        side,
+        lotId: state.ceremony.lotId,
+        count: state.ceremony.lotId === "table" || state.ceremony.lotId === "pea" ? 3 : 5
+      };
+
+      const front = facing * 158;
+      if (state.ceremony.lotId === "table") {
+        pose(0, front - facing * 62, 2 + pulse * 2, 18, pulse * 0.035);
+        pose(1, front - facing * 8, 10 + Math.abs(pulse) * 5, 22, -facing * 0.05);
+        pose(2, front + facing * 55, 1, 16, facing * 0.04);
+      } else if (state.ceremony.lotId === "pea") {
+        pose(0, front - facing * 48, 1, 18, -facing * (0.04 + pulse * 0.03));
+        pose(1, front + facing * 46, 1, 18, facing * (0.04 + pulse * 0.03));
+        pose(2, front - facing * 96, 4 + Math.abs(pulse) * 8, 14, pulse * 0.1);
+      } else if (state.ceremony.lotId === "cluster") {
+        for (let index = 0; index < 5; index += 1) {
+          const column = index % 2;
+          const row = Math.floor(index / 2);
+          pose(
+            index,
+            front + facing * (column ? 16 : -16),
+            row * 38 + (column ? 7 : 0) + Math.abs(pulse) * 3,
+            16 + index * 3,
+            (index - 2) * 0.045
+          );
+        }
+      } else {
+        for (let index = 0; index < 4; index += 1) {
+          pose(index, -facing * (105 + index * 43) + pulse * facing * 4, 1, 14 + index * 2, -facing * 0.11);
+        }
+        pose(4, front, 28 + Math.sin(progress * Math.PI) * 26, 24, facing * 0.07);
+      }
+    }
+  }
+
   function initializeIdentity() {
     if (identityInitialized) return true;
     const { sky, yard, late, pip } = __BAG__.IMG;
@@ -177,18 +255,12 @@
     }
 
     const yardPlane = makePaintedPlane(yard, 270);
-    const yardPip = makePaintedPlane(pip, 55);
-    yardPip.position.x = -168;
-    yardPip.position.z = 14;
-    yardPip.renderOrder = 4;
-    playerCartMesh.add(yardPlane, yardPip);
+    playerCartMesh.add(yardPlane);
+    addPipCrew(playerCartMesh, pip, "player");
 
     const latePlane = makePaintedPlane(late, 270);
-    const latePip = makePaintedPlane(pip, 55, true);
-    latePip.position.x = 168;
-    latePip.position.z = 14;
-    latePip.renderOrder = 4;
-    enemyCartMesh.add(latePlane, latePip);
+    enemyCartMesh.add(latePlane);
+    addPipCrew(enemyCartMesh, pip, "enemy");
 
     identityInitialized = true;
     canvas2d.style.opacity = "0";
@@ -218,6 +290,7 @@
     
     playerCartMesh.position.set(carts.player.x, -__BAG__.groundAt(carts.player.x, carts.player.z) + 32, carts.player.z || 0);
     enemyCartMesh.position.set(carts.enemy.x, -__BAG__.groundAt(carts.enemy.x, carts.enemy.z) + 32, carts.enemy.z || 0);
+    updatePipCrew(state);
 
     const currentProjs = new Set();
     state.projectiles.forEach(p => {
@@ -245,16 +318,33 @@
     state.particles.forEach(p => {
       currentParts.add(p);
       if (!particleMeshes.has(p)) {
-        const mat = new THREE.MeshBasicMaterial({ color: p.color, transparent: true, depthWrite: false });
+        const mat = new THREE.MeshBasicMaterial({
+          color: p.color,
+          transparent: true,
+          depthTest: false,
+          depthWrite: false,
+          fog: false
+        });
         const mesh = new THREE.Mesh(particleGeo, mat);
+        mesh.renderOrder = 6;
         scene.add(mesh);
         particleMeshes.set(p, mesh);
       }
       const mesh = particleMeshes.get(p);
       mesh.position.set(p.x, -p.y, p.z || 0);
-      mesh.scale.set(p.size * 2, p.size * 2, 1);
+      const aspect = p.shape === "spark"
+        ? [0.34, 1.9]
+        : p.shape === "drop"
+          ? [0.62, 1.5]
+          : p.shape === "shard"
+            ? [1.65, 0.58]
+            : p.shape === "clod"
+              ? [1.28, 1]
+              : [1, 1];
+      mesh.scale.set(p.size * 2 * aspect[0], p.size * 2 * aspect[1], 1);
       mesh.material.opacity = Math.max(0, p.life / p.maxLife);
       mesh.quaternion.copy(camera.quaternion);
+      mesh.rotateZ(p.rotation || 0);
     });
 
     for (let [p, mesh] of particleMeshes.entries()) {
@@ -284,7 +374,13 @@
     let camTargetZ = 800;
     let lookTarget = new THREE.Vector3(__BAG__.W / 2, -__BAG__.H / 2, 0);
     
-    if (state.phase === "flight" && state.projectiles.length > 0) {
+    if (state.impactFocus?.life > 0) {
+      const focus = state.impactFocus;
+      camTargetX = focus.x;
+      camTargetY = -focus.y + 85;
+      camTargetZ = focus.tier === "DEAD_LANE" ? 470 : focus.tier === "GRAZE" ? 610 : 760;
+      lookTarget.set(focus.x, -focus.y, focus.z || 0);
+    } else if (state.phase === "flight" && state.projectiles.length > 0) {
       const mainP = state.projectiles[0];
       camTargetX = mainP.x;
       camTargetY = -mainP.y + 100;

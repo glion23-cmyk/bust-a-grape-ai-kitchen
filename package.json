@@ -1,0 +1,18 @@
+{
+  "name": "bust-a-grape",
+  "version": "1.0.0",
+  "description": "Original side-view artillery food fight. The only ammo is grapes. The only language is disrespect.",
+  "private": true,
+  "scripts": {
+    "test": "node scripts/test-fixture.js && node scripts/test-zaccuracy.js",
+    "test:browser": "node scripts/playwright-test.js",
+    "evidence": "npm run test:browser && node scripts/capture-ceremony.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "UNLICENSED",
+  "type": "commonjs",
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  }
+}

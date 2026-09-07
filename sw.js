@@ -1,10 +1,10 @@
-const CACHE_NAME = "bag-v6";
+const CACHE_NAME = "bag-v7";
 const CORE_FILES = [
   "./",
   "./index.html",
-  "./style.css?v=6",
-  "./game.js?v=5",
-  "./renderer3d.js?v=3",
+  "./style.css?v=7",
+  "./game.js?v=6",
+  "./renderer3d.js?v=4",
   "./vendor/three.min.js",
   "./vendor/LICENSE.three.txt",
   "./manifest.webmanifest",
