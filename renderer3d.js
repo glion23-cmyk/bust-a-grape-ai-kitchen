@@ -126,7 +126,9 @@
   rebuildTerrain();
 
   const projectileMeshes = new Map();
+  const particleMeshes = new Map();
   const sphereGeo = new THREE.SphereGeometry(1, 8, 8);
+  const particleGeo = new THREE.PlaneGeometry(1, 1);
   
   const playerCartMesh = new THREE.Group();
   const enemyCartMesh = new THREE.Group();
@@ -239,6 +241,30 @@
       }
     }
 
+    const currentParts = new Set();
+    state.particles.forEach(p => {
+      currentParts.add(p);
+      if (!particleMeshes.has(p)) {
+        const mat = new THREE.MeshBasicMaterial({ color: p.color, transparent: true, depthWrite: false });
+        const mesh = new THREE.Mesh(particleGeo, mat);
+        scene.add(mesh);
+        particleMeshes.set(p, mesh);
+      }
+      const mesh = particleMeshes.get(p);
+      mesh.position.set(p.x, -p.y, p.z || 0);
+      mesh.scale.set(p.size * 2, p.size * 2, 1);
+      mesh.material.opacity = Math.max(0, p.life / p.maxLife);
+      mesh.quaternion.copy(camera.quaternion);
+    });
+
+    for (let [p, mesh] of particleMeshes.entries()) {
+      if (!currentParts.has(p)) {
+        scene.remove(mesh);
+        mesh.material.dispose();
+        particleMeshes.delete(p);
+      }
+    }
+
     if (state.rutGhost && state.rutGhost !== lastGhostId) {
       if (ghostLine) scene.remove(ghostLine);
       const points = state.rutGhost.trail.map(pt => new THREE.Vector3(pt.x, -pt.y, pt.z || 0));
@@ -278,6 +304,15 @@
     camera.position.x += (camTargetX - camera.position.x) * 0.05;
     camera.position.y += (camTargetY - camera.position.y) * 0.05;
     camera.position.z += (camTargetZ - camera.position.z) * 0.05;
+    
+    if (state.cameraPunchZ) {
+      camera.position.z += state.cameraPunchZ;
+      state.cameraPunchZ = 0;
+    }
+    if (state.cameraPunchX) {
+      camera.position.x += state.cameraPunchX;
+      state.cameraPunchX = 0;
+    }
     
     if (state.shake > 0) {
       camera.position.x += (Math.random() - 0.5) * state.shake * 0.5;

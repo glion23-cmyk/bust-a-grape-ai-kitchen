@@ -45,7 +45,13 @@
     resultCopy: document.getElementById("resultCopy"),
     resultStats: document.getElementById("resultStats"),
     startButton: document.getElementById("startButton"),
+    startSeriesButton: document.getElementById("startSeriesButton"),
     rematchButton: document.getElementById("rematchButton"),
+    rematchSeriesButton: document.getElementById("rematchSeriesButton"),
+    grudgeCard: document.getElementById("grudgeCard"),
+    grudgeScore: document.getElementById("grudgeScore"),
+    grudgeLeader: document.getElementById("grudgeLeader"),
+    grudgeNext: document.getElementById("grudgeNext"),
     soundToggle: document.getElementById("soundToggle"),
     portraitContinue: document.getElementById("portraitContinue"),
     lots: document.getElementById("lots"),
@@ -95,6 +101,13 @@
       craterRadius: 82, craterDepth: 52, shake: 18, ceremony: 1.18,
       protocol: "BLOCK-AND-TACKLE · MIND THE ROPE · CUT LOOSE"
     }
+  };
+
+  const CEREMONIES = {
+    table: { color: COLORS.juice, kind: "juice", punch: -120 },
+    pea: { color: COLORS.cream, kind: "smoke", punch: -100 },
+    cluster: { color: COLORS.oxblood, kind: "juice", punch: -140 },
+    lug: { color: COLORS.ink, kind: "dirt", punch: -180 }
   };
 
   const LOT_ORDER = ["table", "pea", "cluster", "lug"];
@@ -361,7 +374,15 @@
     stats: null
   };
 
-  const rivalry = { yard: 0, late: 0, draws: 0, playerRun: 0, bestRun: 0 };
+  const allTimeGrudge = (() => {
+    try {
+      const data = localStorage.getItem("BAG_GRUDGE");
+      if (data) return JSON.parse(data);
+    } catch (e) {}
+    return { yard: 0, late: 0 };
+  })();
+
+  const rivalry = { yard: 0, late: 0, draws: 0, playerRun: 0, bestRun: 0, allTime: allTimeGrudge };
 
   resetTerrain();
 
@@ -517,6 +538,18 @@
     updateHud();
   }
 
+  function startSingle() {
+    state.series = false;
+    startMatch();
+  }
+
+  function startSeries() {
+    state.series = true;
+    rivalry.seriesYard = 0;
+    rivalry.seriesLate = 0;
+    startMatch();
+  }
+
   function startMatch() {
     sound.wake();
     sound.play("start");
@@ -530,11 +563,12 @@
     state.dragging = false;
     DOM.protocolBanner.hidden = true;
     DOM.fieldHint.hidden = true;
-    DOM.resultScreen.hidden = false;
     const playerWon = winner === "player";
     const draw = winner === "draw";
     if (playerWon) {
       rivalry.yard += 1;
+      rivalry.allTime.yard += 1;
+      if (state.series) rivalry.seriesYard += 1;
       rivalry.playerRun += 1;
       rivalry.bestRun = Math.max(rivalry.bestRun, rivalry.playerRun);
     } else if (draw) {
@@ -542,19 +576,51 @@
       rivalry.playerRun = 0;
     } else {
       rivalry.late += 1;
+      rivalry.allTime.late += 1;
+      if (state.series) rivalry.seriesLate += 1;
       rivalry.playerRun = 0;
     }
-    DOM.resultWord.textContent = draw ? "COMPOST." : playerWon ? "VINEGAR." : "MUST.";
-    const ruling = draw ? pickLine(LINES.draw) : playerWon ? pickLine(LINES.playerWin) : pickLine(LINES.playerLose);
-    DOM.resultCopy.textContent = ruling;
+    
+    try {
+      localStorage.setItem("BAG_GRUDGE", JSON.stringify(rivalry.allTime));
+    } catch(e) {}
+
+    const seriesActive = state.series && rivalry.seriesYard < 2 && rivalry.seriesLate < 2;
+
+    if (seriesActive) {
+      DOM.grudgeScore.textContent = `${rivalry.seriesYard} - ${rivalry.seriesLate}`;
+      DOM.grudgeLeader.className = `grudge-leader ${rivalry.seriesLate > rivalry.seriesYard ? 'late' : ''}`;
+      DOM.grudgeCard.hidden = false;
+      DOM.worldHud.hidden = true;
+      return;
+    }
+
+    DOM.resultScreen.hidden = false;
+
+    if (state.series) {
+      const playerSeriesWon = rivalry.seriesYard >= 2;
+      DOM.resultWord.textContent = playerSeriesWon ? "SERIES WIN." : "SERIES LOST.";
+      DOM.resultCopy.textContent = `You ${playerSeriesWon ? 'took' : 'dropped'} the best-of-3.`;
+    } else {
+      DOM.resultWord.textContent = draw ? "COMPOST." : playerWon ? "VINEGAR." : "MUST.";
+      const ruling = draw ? pickLine(LINES.draw) : playerWon ? pickLine(LINES.playerWin) : pickLine(LINES.playerLose);
+      DOM.resultCopy.textContent = ruling;
+    }
+
     lineSwapToken += 1;
     DOM.line.classList.remove("swap");
-    DOM.line.textContent = ruling;
+    DOM.line.textContent = DOM.resultCopy.textContent;
     const accuracy = state.stats.shots ? Math.round(state.stats.scoringShots / state.stats.shots * 100) : 0;
     const closest = Number.isFinite(state.stats.closestMiss) ? `${Math.round(state.stats.closestMiss)} PX CLOSE` : "NO CLEAN MISSES";
-    DOM.resultStats.innerHTML = `<span>${state.stats.shots} SHOTS</span><span>${accuracy}% SCORING SHOTS</span><span>${closest}</span><span>SERIES ${rivalry.yard}–${rivalry.late}</span>`;
+    
+    let historyText = "";
+    if (rivalry.allTime.yard > rivalry.allTime.late) historyText = `YOU LEAD ALL-TIME RIVALRY ${rivalry.allTime.yard}-${rivalry.allTime.late}`;
+    else if (rivalry.allTime.yard < rivalry.allTime.late) historyText = `YOU TRAIL ALL-TIME RIVALRY ${rivalry.allTime.yard}-${rivalry.allTime.late}`;
+    else historyText = `ALL-TIME RIVALRY TIED ${rivalry.allTime.yard}-${rivalry.allTime.late}`;
+
+    DOM.resultStats.innerHTML = `<span>${state.stats.shots} SHOTS</span><span>${accuracy}% SCORING SHOTS</span><span>${closest}</span><span>${historyText}</span>`;
     DOM.rematchButton.textContent = `RUN IT BACK · MATCH ${String(state.matchNumber + 1).padStart(2, "0")}`;
-    DOM.fieldStatus.textContent = `SERIES / YARD ${rivalry.yard}–${rivalry.late} LATE / BEST RUN ${rivalry.bestRun}`;
+    DOM.fieldStatus.textContent = `ALL-TIME ${rivalry.allTime.yard}–${rivalry.allTime.late} / BEST RUN ${rivalry.bestRun}`;
     sound.play(playerWon ? "win" : "impact", "lug");
     updateHud();
   }
@@ -805,8 +871,14 @@
     updateHud();
   });
 
-  DOM.startButton.addEventListener("click", startMatch);
-  DOM.rematchButton.addEventListener("click", startMatch);
+  DOM.startButton.addEventListener("click", startSingle);
+  DOM.startSeriesButton.addEventListener("click", startSeries);
+  DOM.rematchButton.addEventListener("click", startSingle);
+  DOM.rematchSeriesButton.addEventListener("click", startSeries);
+  DOM.grudgeNext.addEventListener("click", () => {
+    DOM.grudgeCard.hidden = true;
+    startMatch();
+  });
   DOM.soundToggle.addEventListener("click", () => {
     sound.enabled = !sound.enabled;
     if (sound.enabled) {
@@ -827,13 +899,14 @@
   DOM.soundToggle.setAttribute("aria-pressed", "true");
   updateHud();
 
-  function burstAt(x, y, count, kind = "juice", lotId = "table") {
+  function burstAt(x, y, count, kind = "juice", lotId = "table", options = {}) {
     const lot = LOTS[lotId] || LOTS.table;
+    const { z = 0, vxNudge = 0, vyNudge = 0, vzNudge = 0, colorOverride = null } = options;
     for (let i = 0; i < count; i += 1) {
       const angle = randomBetween(-Math.PI, 0);
       const speed = kind === "smoke" ? randomBetween(18, 75) : randomBetween(80, lotId === "lug" ? 350 : 245);
       const life = randomBetween(kind === "smoke" ? 0.45 : 0.35, kind === "smoke" ? 1.05 : 0.9);
-      const palette = kind === "dirt"
+      const palette = colorOverride ? [colorOverride] : kind === "dirt"
         ? [COLORS.dirt, COLORS.ink, COLORS.copper]
         : kind === "smoke"
           ? [COLORS.ink, COLORS.dirt, COLORS.horizon]
@@ -841,8 +914,10 @@
       state.particles.push({
         x,
         y,
-        vx: Math.cos(angle) * speed + randomBetween(-45, 45),
-        vy: Math.sin(angle) * speed - (kind === "smoke" ? randomBetween(10, 50) : 0),
+        z,
+        vx: Math.cos(angle) * speed + randomBetween(-45, 45) + vxNudge,
+        vy: Math.sin(angle) * speed - (kind === "smoke" ? randomBetween(10, 50) : 0) + vyNudge,
+        vz: randomBetween(-30, 30) + vzNudge,
         gravity: kind === "smoke" ? -12 : 520,
         size: randomBetween(kind === "smoke" ? 5 : 2, kind === "smoke" ? 13 : lotId === "lug" ? 10 : 6),
         life,
@@ -883,18 +958,32 @@
     if (state.stains.length > 28) state.stains.shift();
   }
 
-  function applyVolleyDamage(cart, requested, direct) {
+  const TIER_DEAD = "DEAD_LANE";
+  const TIER_GRAZE = "GRAZE";
+  const TIER_WIDE = "WIDE";
+
+  function zAccuracy(impactZ, targetZ) {
+    const delta = Math.abs(impactZ - targetZ);
+    if (delta <= 15) return { tier: TIER_DEAD, damageMultiplier: 1.15 };
+    if (delta <= 40) return { tier: TIER_GRAZE, damageMultiplier: 1.0 };
+    return { tier: TIER_WIDE, damageMultiplier: 0.8 };
+  }
+
+  function applyVolleyDamage(cart, requested, direct, multiplier = 1, tierName = "") {
     if (!state.volley || requested <= 0 || cart.hp <= 0) return 0;
     const lot = LOTS[state.volley.lotId];
     const already = state.volley.damage[cart.id];
-    const allowed = Math.max(0, lot.damageCap - already);
-    const actual = Math.min(requested, allowed, cart.hp);
+    const cap = lot.damageCap * multiplier;
+    const allowed = Math.max(0, cap - already);
+    const actual = Math.min(requested * multiplier, allowed, cart.hp);
     if (actual <= 0) return 0;
     cart.hp -= actual;
     state.volley.damage[cart.id] += actual;
     state.volley.hitDirect ||= direct;
     const centerY = groundAt(cart.x) - 92;
-    addFloater(cart.x, centerY, actual === 2 ? "-2 · PULPED" : "-1 · BOTTLED", actual === 2);
+    const baseText = actual >= 1.9 ? "-2 · PULPED" : "-1 · BOTTLED";
+    const floaterText = tierName ? `${tierName}  ${baseText}` : baseText;
+    addFloater(cart.x, centerY, floaterText, actual >= 1.9);
     burstAt(cart.x, centerY + 28, direct ? 19 : 12, "juice", state.volley.lotId);
     state.shake = Math.max(state.shake, LOTS[state.volley.lotId].shake + actual * 3);
     sound.play("bottle");
@@ -917,19 +1006,46 @@
     craterAt(impactX, projectile.z || 0, lot.craterRadius * childScale, lot.craterDepth * childScale);
     addStain(impactX, lot.id, lot.id === "lug" ? 1.75 : projectile.child ? 0.62 : 1);
     addRing(impactX, impactY, lot.splashRadius || lot.craterRadius, lot.id === "pea" ? COLORS.cream : COLORS.juice);
-    burstAt(impactX, impactY, Math.round((lot.id === "lug" ? 42 : projectile.child ? 12 : 24) * childScale), "juice", lot.id);
-    burstAt(impactX, impactY, Math.round((lot.id === "lug" ? 28 : 10) * childScale), "dirt", lot.id);
+    const targetCart = projectile.owner === "player" ? carts.enemy : carts.player;
+    const zAcc = zAccuracy(projectile.z || 0, targetCart.z || 0);
+    const pZ = projectile.z || 0;
+    const desc = CEREMONIES[lot.id] || CEREMONIES.table;
+
+    const isFirstHit = state.volley && !state.volley.ceremonyPlayed;
+    if (isFirstHit) {
+      if (state.volley) state.volley.ceremonyPlayed = true;
+
+      if (zAcc.tier === TIER_DEAD) {
+        if (projectile.owner === "player") state.cameraPunchZ = desc.punch;
+        burstAt(impactX, impactY, Math.round(20 * childScale), desc.kind, lot.id, { z: pZ, vzNudge: -150, colorOverride: desc.color });
+        burstAt(impactX, impactY, Math.round(10 * childScale), "dirt", lot.id, { z: pZ, vzNudge: -100 });
+      } else if (zAcc.tier === TIER_GRAZE) {
+        if (projectile.owner === "player") state.cameraPunchX = (Math.random() > 0.5 ? 1 : -1) * 40;
+        burstAt(impactX, impactY, Math.round(10 * childScale), "juice", lot.id, { z: pZ, vxNudge: 150 });
+        burstAt(impactX, impactY, Math.round(10 * childScale), "juice", lot.id, { z: pZ, vxNudge: -150 });
+        burstAt(impactX, impactY, Math.round(8 * childScale), "dirt", lot.id, { z: pZ });
+      } else {
+        burstAt(impactX, impactY, Math.round(15 * childScale), "dirt", lot.id, { z: pZ });
+      }
+    } else {
+      burstAt(impactX, impactY, Math.round(10 * childScale), "dirt", lot.id, { z: pZ });
+      if (zAcc.tier !== TIER_WIDE) {
+        burstAt(impactX, impactY, Math.round(12 * childScale), "juice", lot.id, { z: pZ });
+      }
+    }
+
     state.shake = Math.max(state.shake, lot.shake * childScale);
     sound.play("impact", lot.id);
 
-    if (directCart) applyVolleyDamage(directCart, lot.direct, true);
+    const tierName = zAcc.tier.replace("_", " ");
+    if (directCart) applyVolleyDamage(directCart, lot.direct, true, zAcc.damageMultiplier, tierName);
 
     if (lot.splash > 0) {
       [carts.player, carts.enemy].forEach((cart) => {
         if (cart === directCart) return;
         const centerY = groundAt(cart.x, cart.z) - 62;
         const distance = Math.hypot(impactX - cart.x, impactY - centerY, (projectile.z || 0) - (cart.z || 0));
-        if (distance <= lot.splashRadius) applyVolleyDamage(cart, lot.splash, false);
+        if (distance <= lot.splashRadius) applyVolleyDamage(cart, lot.splash, false, zAcc.damageMultiplier, tierName);
       });
     }
   }
@@ -1081,6 +1197,10 @@
       particle.vy += particle.gravity * dt;
       particle.x += particle.vx * dt;
       particle.y += particle.vy * dt;
+      if (particle.z !== undefined) {
+        particle.z += particle.vz * dt;
+        particle.vz *= Math.pow(0.36, dt);
+      }
       particle.vx *= Math.pow(0.36, dt);
       if (particle.kind === "smoke") particle.size += dt * 10;
     }
