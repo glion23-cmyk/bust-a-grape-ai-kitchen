@@ -23,7 +23,13 @@ const document = {
   }),
   documentElement: { style: { setProperty: () => {} } },
   body: { classList: { add: () => {} } },
-  createElement: () => ({ classList: { toggle: ()=>{} }, dataset: {}, addEventListener: ()=>{}, setAttribute: ()=>{} })
+  createElement: () => ({
+    classList: { toggle: ()=>{} },
+    dataset: {},
+    style: { setProperty: ()=>{} },
+    addEventListener: ()=>{},
+    setAttribute: ()=>{}
+  })
 };
 const navigator = {};
 
@@ -36,6 +42,11 @@ global.Math.random = () => 0.42;
 global.console.warn = () => {};
 global.Image = function() { this.onload = ()=>{}; };
 window.Image = global.Image;
+global.localStorage = window.localStorage = {
+  getItem: () => null,
+  setItem: () => {},
+  removeItem: () => {}
+};
 
 // Evaluate game.js
 try {

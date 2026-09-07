@@ -104,10 +104,17 @@
   };
 
   const CEREMONIES = {
-    table: { color: COLORS.juice, kind: "juice", punch: -120 },
-    pea: { color: COLORS.cream, kind: "smoke", punch: -100 },
-    cluster: { color: COLORS.oxblood, kind: "juice", punch: -140 },
-    lug: { color: COLORS.ink, kind: "dirt", punch: -180 }
+    table: { color: [COLORS.juice, COLORS.cream], kind: "juice", shape: "drop", punch: -120, primary: 20, vy: -35, vz: 175, size: 1.65 },
+    pea: { color: COLORS.cream, kind: "smoke", shape: "spark", punch: -100, primary: 24, vy: -135, vz: 95, size: 0.9 },
+    cluster: { color: [COLORS.oxblood, COLORS.cream], kind: "juice", shape: "shard", punch: -140, primary: 22, vx: 135, vy: -55, vz: 145, size: 1.75 },
+    lug: { color: [COLORS.copper, COLORS.ink], kind: "dirt", shape: "clod", punch: -180, primary: 17, vy: -165, vz: 125, size: 1.42 }
+  };
+
+  const CEREMONY_CALLS = {
+    table: "THUMPER RINGS THE PRESS",
+    pea: "ZIPPER THREADS THE EYE",
+    cluster: "PULPER OPENS THE WHOLE LOT",
+    lug: "WIDOWMAKER FORECLOSES"
   };
 
   const LOT_ORDER = ["table", "pea", "cluster", "lug"];
@@ -363,6 +370,9 @@
     rings: [],
     floaters: [],
     stains: [],
+    impactFocus: null,
+    cameraPunchX: 0,
+    cameraPunchZ: 0,
     shake: 0,
     resolveTimer: -1,
     intermission: 0,
@@ -371,7 +381,8 @@
     elapsed: 0,
     matchNumber: 0,
     firstAim: true,
-    stats: null
+    stats: null,
+    series: false
   };
 
   const allTimeGrudge = (() => {
@@ -382,7 +393,16 @@
     return { yard: 0, late: 0 };
   })();
 
-  const rivalry = { yard: 0, late: 0, draws: 0, playerRun: 0, bestRun: 0, allTime: allTimeGrudge };
+  const rivalry = {
+    yard: 0,
+    late: 0,
+    draws: 0,
+    playerRun: 0,
+    bestRun: 0,
+    seriesYard: 0,
+    seriesLate: 0,
+    allTime: allTimeGrudge
+  };
 
   resetTerrain();
 
@@ -430,11 +450,13 @@
     container.replaceChildren();
     for (let i = 0; i < 3; i += 1) {
       const bottle = document.createElement("i");
-      bottle.className = `bottle${i >= hp ? " empty" : ""}`;
+      const fill = clamp(hp - i, 0, 1);
+      bottle.className = `bottle${fill <= 0 ? " empty" : fill < 1 ? " partial" : ""}`;
+      bottle.style.setProperty("--fill-top", `${Math.round(8 + (1 - fill) * 82)}%`);
       bottle.setAttribute("aria-hidden", "true");
       container.appendChild(bottle);
     }
-    container.setAttribute("aria-label", `${label}: ${hp} of 3 bottles`);
+    container.setAttribute("aria-label", `${label}: ${Math.max(0, hp).toFixed(1)} of 3 bottles`);
   }
 
   function updateHud() {
@@ -517,6 +539,9 @@
     state.floaters = [];
     state.stains = [];
     state.craters = [];
+    state.impactFocus = null;
+    state.cameraPunchX = 0;
+    state.cameraPunchZ = 0;
     state.rutGhost = null;
     state.shake = 0;
     state.resolveTimer = -1;
@@ -580,7 +605,7 @@
       if (state.series) rivalry.seriesLate += 1;
       rivalry.playerRun = 0;
     }
-    
+
     try {
       localStorage.setItem("BAG_GRUDGE", JSON.stringify(rivalry.allTime));
     } catch(e) {}
@@ -612,7 +637,7 @@
     DOM.line.textContent = DOM.resultCopy.textContent;
     const accuracy = state.stats.shots ? Math.round(state.stats.scoringShots / state.stats.shots * 100) : 0;
     const closest = Number.isFinite(state.stats.closestMiss) ? `${Math.round(state.stats.closestMiss)} PX CLOSE` : "NO CLEAN MISSES";
-    
+
     let historyText = "";
     if (rivalry.allTime.yard > rivalry.allTime.late) historyText = `YOU LEAD ALL-TIME RIVALRY ${rivalry.allTime.yard}-${rivalry.allTime.late}`;
     else if (rivalry.allTime.yard < rivalry.allTime.late) historyText = `YOU TRAIL ALL-TIME RIVALRY ${rivalry.allTime.yard}-${rivalry.allTime.late}`;
@@ -774,11 +799,30 @@
     state.aiTurns += 1;
     const lotId = chooseAiLot();
     const aim = solveAiAim(lotId);
+
+    let targetZ = 0;
+    const rand = Math.random();
+    if (rand < 0.20) {
+      targetZ = randomBetween(-15, 15);
+    } else if (rand < 0.70) {
+      targetZ = (Math.random() < 0.5 ? 1 : -1) * randomBetween(16, 40);
+    } else {
+      targetZ = (Math.random() < 0.5 ? 1 : -1) * randomBetween(41, 70);
+    }
+
+    const radians = aim.angle * Math.PI / 180;
+    const speed = (330 + aim.power * 6.5) * LOTS[lotId].speed;
+    const vx = Math.cos(radians) * speed;
+    const distance = Math.abs(carts.player.x - carts.enemy.x);
+    const flightTime = distance / vx;
+    const cut = targetZ / (120 * flightTime);
+
     state.selected = lotId;
     state.aimAngle = aim.angle;
     state.aimPower = aim.power;
+    state.aimCut = cut;
     state.phase = "intermission";
-    beginShot("enemy", lotId, aim.angle, aim.power);
+    beginShot("enemy", lotId, aim.angle, aim.power, cut);
   }
 
   function canvasPoint(event) {
@@ -901,12 +945,20 @@
 
   function burstAt(x, y, count, kind = "juice", lotId = "table", options = {}) {
     const lot = LOTS[lotId] || LOTS.table;
-    const { z = 0, vxNudge = 0, vyNudge = 0, vzNudge = 0, colorOverride = null } = options;
+    const {
+      z = 0,
+      vxNudge = 0,
+      vyNudge = 0,
+      vzNudge = 0,
+      colorOverride = null,
+      shape = kind,
+      sizeScale = 1
+    } = options;
     for (let i = 0; i < count; i += 1) {
       const angle = randomBetween(-Math.PI, 0);
       const speed = kind === "smoke" ? randomBetween(18, 75) : randomBetween(80, lotId === "lug" ? 350 : 245);
       const life = randomBetween(kind === "smoke" ? 0.45 : 0.35, kind === "smoke" ? 1.05 : 0.9);
-      const palette = colorOverride ? [colorOverride] : kind === "dirt"
+      const palette = colorOverride ? (Array.isArray(colorOverride) ? colorOverride : [colorOverride]) : kind === "dirt"
         ? [COLORS.dirt, COLORS.ink, COLORS.copper]
         : kind === "smoke"
           ? [COLORS.ink, COLORS.dirt, COLORS.horizon]
@@ -919,11 +971,14 @@
         vy: Math.sin(angle) * speed - (kind === "smoke" ? randomBetween(10, 50) : 0) + vyNudge,
         vz: randomBetween(-30, 30) + vzNudge,
         gravity: kind === "smoke" ? -12 : 520,
-        size: randomBetween(kind === "smoke" ? 5 : 2, kind === "smoke" ? 13 : lotId === "lug" ? 10 : 6),
+        size: randomBetween(kind === "smoke" ? 5 : 2, kind === "smoke" ? 13 : lotId === "lug" ? 10 : 6) * sizeScale,
         life,
         maxLife: life,
         color: palette[Math.floor(Math.random() * palette.length)],
-        kind
+        kind,
+        shape,
+        rotation: randomBetween(-Math.PI, Math.PI),
+        spin: randomBetween(-8, 8)
       });
     }
   }
@@ -984,7 +1039,9 @@
     const baseText = actual >= 1.9 ? "-2 · PULPED" : "-1 · BOTTLED";
     const floaterText = tierName ? `${tierName}  ${baseText}` : baseText;
     addFloater(cart.x, centerY, floaterText, actual >= 1.9);
-    burstAt(cart.x, centerY + 28, direct ? 19 : 12, "juice", state.volley.lotId);
+    if (!state.volley.ceremonyPlayed) {
+      burstAt(cart.x, centerY + 28, direct ? 19 : 12, "juice", state.volley.lotId);
+    }
     state.shake = Math.max(state.shake, LOTS[state.volley.lotId].shake + actual * 3);
     sound.play("bottle");
     if (state.volley.shooterId === "player") {
@@ -1014,11 +1071,41 @@
     const isFirstHit = state.volley && !state.volley.ceremonyPlayed;
     if (isFirstHit) {
       if (state.volley) state.volley.ceremonyPlayed = true;
+      state.impactFocus = {
+        x: impactX,
+        y: impactY,
+        z: pZ,
+        life: 0.72,
+        tier: zAcc.tier,
+        lotId: lot.id
+      };
+      lineSwapToken += 1;
+      DOM.line.classList.remove("swap");
+      DOM.line.textContent = zAcc.tier === TIER_DEAD
+        ? `DEAD LANE · ${CEREMONY_CALLS[lot.id]}`
+        : zAcc.tier === TIER_GRAZE
+          ? `GRAZE · ${lot.name} FOUND THE SHOULDER`
+          : `WIDE · ${lot.name} OWES THE DITCH AN APOLOGY`;
 
       if (zAcc.tier === TIER_DEAD) {
         if (projectile.owner === "player") state.cameraPunchZ = desc.punch;
-        burstAt(impactX, impactY, Math.round(20 * childScale), desc.kind, lot.id, { z: pZ, vzNudge: -150, colorOverride: desc.color });
-        burstAt(impactX, impactY, Math.round(10 * childScale), "dirt", lot.id, { z: pZ, vzNudge: -100 });
+        const primaryCount = Math.round(desc.primary * childScale);
+        const dirtCount = Math.max(0, Math.round((30 - desc.primary) * childScale));
+        burstAt(impactX, impactY, primaryCount, desc.kind, lot.id, {
+          z: pZ,
+          vxNudge: desc.vx || 0,
+          vyNudge: desc.vy || 0,
+          vzNudge: desc.vz,
+          colorOverride: desc.color,
+          shape: desc.shape,
+          sizeScale: desc.size
+        });
+        burstAt(impactX, impactY, dirtCount, "dirt", lot.id, {
+          z: pZ,
+          vyNudge: -45,
+          vzNudge: 90,
+          shape: "clod"
+        });
       } else if (zAcc.tier === TIER_GRAZE) {
         if (projectile.owner === "player") state.cameraPunchX = (Math.random() > 0.5 ? 1 : -1) * 40;
         burstAt(impactX, impactY, Math.round(10 * childScale), "juice", lot.id, { z: pZ, vxNudge: 150 });
@@ -1192,6 +1279,10 @@
   }
 
   function updateEffects(dt) {
+    if (state.impactFocus) {
+      state.impactFocus.life -= dt;
+      if (state.impactFocus.life <= 0) state.impactFocus = null;
+    }
     for (const particle of state.particles) {
       particle.life -= dt;
       particle.vy += particle.gravity * dt;
@@ -1202,6 +1293,7 @@
         particle.vz *= Math.pow(0.36, dt);
       }
       particle.vx *= Math.pow(0.36, dt);
+      particle.rotation += particle.spin * dt;
       if (particle.kind === "smoke") particle.size += dt * 10;
     }
     state.particles = state.particles.filter((particle) => particle.life > 0);

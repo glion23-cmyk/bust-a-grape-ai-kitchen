@@ -1,16 +1,11 @@
-# Gemini Handoff: 02-ritual-rivalry
+# Gemini handoff — Round 02 gate close
 
-**What changed:**
-- Math: `zAccuracy(impactZ, targetZ)` wired deterministically into damage & effects. Dead Lane is mathematically very strict.
-- Visuals: Data-driven ceremonies in `game.js`. `renderer3d.js` applies instantaneous `cameraPunchZ/X` impulses that lerp back smoothly using the existing broadcast camera damping. Particles use `THREE.PlaneGeometry` with `< 30` quads per hit.
-- Wrapper: Best-of-3 wrapper intercepts `finishMatch`, tracking series state and rendering HTML `#grudgeCard` between rounds. `localStorage` tracks all-time record.
-- Fallback: Tier label logic passed to 2D `addFloater` directly; naturally hidden in 3D.
-
-**Compromises:**
-- Skipped local Playwright script as the repo lacked dependencies; tested mathematically via Node and manually verified viewport scaling code.
-
-**Remaining risk:**
-- Since the AI hardcodes `cut = 0`, it frequently hits Dead Lane when the player cart rests at `z = 0`. This increases difficulty.
-
-**What to judge:**
-Does the 15-unit Dead Lane requirement feel fair over repeated matches, and does the Best-of-3 format resolve the pacing issues without dragging the game?
+- Gemini built z-accuracy, impact rituals, AI spread, best-of-three state, Grudge persistence, and the browser harness.
+- Integration review rejected the first black/mislabeled captures and repaired the proof path over ephemeral localhost.
+- AI CUT now derives from solved-shot time-to-target; seeded 1,000-shot result is 18.5/52.3/29.2 Dead/Graze/Wide.
+- The WebGL path now restores all four Pip launch tableaux with 3/3/5/5 wheel-scale crew members.
+- Impact focus, broadcast calls, and drop/spark/shard/clod silhouettes make depth outcomes readable.
+- The first staged impact owns a strict 30-quad budget; fractional bottle damage is visually represented.
+- Both phone viewports, real NEXT MATCH pointer transition, 2-0 reload persistence, Canvas fallback, and four tuned ammo impacts pass.
+- Headless SwiftShader sample: 774 frames/13.21 s, 8 over 20 ms (1.03%); physical phones remain unproven.
+- Opus should next judge human feel: Dead Lane fairness, ritual duration, and whether the Grudge Card earns another match.
